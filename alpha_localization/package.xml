@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>alpha_localization</name>
+  <version>0.0.0</version>
+  <description>The alpha_localization package</description>
+
+  <author email="emircem@uri.edu">Emir Cem Gezer</author>
+  <maintainer email="emircem@uri.edu">Emir Cem Gezer</maintainer>
+
+  <license>GPLv3</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>robot_localization</depend>
+  <depend>roscpp</depend>
+  <depend>mvp_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>uno_lqe</depend>
+  <depend>sensor_msgs</depend>
+  <depend>imu_transformer</depend>
+
+</package>
