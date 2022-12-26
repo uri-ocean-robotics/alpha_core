@@ -1,0 +1,12 @@
+[submodule "external/waterlinked_dvl"]
+	path = external/waterlinked_dvl
+	url = https://github.com/uri-ocean-robotics/waterlinked_dvl.git
+[submodule "external/uno_lqe"]
+	path = external/uno_lqe
+	url = https://github.com/GSO-soslab/uno_lqe.git
+[submodule "external/bluerobotics_ping360"]
+	path = external/bluerobotics_ping360
+	url = https://github.com/GSO-soslab/bluerobotics_ping360.git
+[submodule "external/xsens_mti_ros_driver"]
+	path = external/xsens_mti_ros_driver
+	url = https://github.com/GSO-soslab/xsens_mti_ros_driver.git
