@@ -32,14 +32,16 @@ class IMUNedEnu {
         ros::NodeHandlePtr m_nh;
 
         ros::NodeHandlePtr m_pnh;
-
+   
         ros::Publisher m_imu_out;
 
         ros::Subscriber m_imu_in;
 
         std::string m_frame_id;
-
+        
         void f_imu_callback(const sensor_msgs::ImuConstPtr& msg);
+        void f_imu_callback2(const sensor_msgs::ImuConstPtr& msg);
+
     public:
         IMUNedEnu();
 
