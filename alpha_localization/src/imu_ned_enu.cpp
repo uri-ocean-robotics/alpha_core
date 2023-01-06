@@ -25,14 +25,25 @@
 #include "iostream"
 #include "cstdio"
 #include "imu_ned_enu.hpp"
+#include <tf/tf.h>
+#include "tf/transform_datatypes.h"
+#include "geometry_msgs/Vector3.h"
+#include "geometry_msgs/Quaternion.h"
 
 IMUNedEnu::IMUNedEnu() {
 
     m_nh.reset(new ros::NodeHandle());
 
-    m_imu_in =  m_nh->subscribe("imu_in/data", 10, &IMUNedEnu::f_imu_callback, this);
+    m_imu_in =  m_nh->subscribe("imu_in/data", 10, &IMUNedEnu::f_imu_callback2, this);
 
     m_imu_out = m_nh->advertise<sensor_msgs::Imu>("imu_out/data", 10);
+
+    // m_pnh = getPrivateNodeHandle();
+    
+    m_pnh.reset(new ros::NodeHandle("~"));
+
+    m_pnh->param<std::string>("frame_id", m_frame_id, "imu");
+
 }
 
 void IMUNedEnu::f_imu_callback(const sensor_msgs::ImuConstPtr& msg) {
@@ -43,7 +54,7 @@ void IMUNedEnu::f_imu_callback(const sensor_msgs::ImuConstPtr& msg) {
         msg->orientation.y,
         msg->orientation.z
     };
-
+   
     // auto euler = i.toRotationMatrix().eulerAngles(0, 1, 2);
 
     // Eigen::Quaterniond o = i;
@@ -59,9 +70,42 @@ void IMUNedEnu::f_imu_callback(const sensor_msgs::ImuConstPtr& msg) {
     m.orientation.y = i.x();
     m.orientation.z = -i.z();
 
+
     m_imu_out.publish(m);
 
 }
+
+
+void IMUNedEnu::f_imu_callback2(const sensor_msgs::ImuConstPtr& msg) {
+
+
+    tf::Quaternion q(
+        msg->orientation.x,
+        msg->orientation.y,
+        msg->orientation.z,
+        msg->orientation.w);
+
+    double roll, pitch, yaw;
+    tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
+
+    tf2::Quaternion newq;
+    newq.setRPY(roll-M_PI, -pitch, -yaw + M_PI_2);
+
+    newq = newq.normalize();
+
+
+    sensor_msgs::Imu m = *msg;
+ 
+    m.orientation.x = newq.x();
+    m.orientation.y = newq.y();
+    m.orientation.z = newq.z();
+    m.orientation.w = newq.w();
+    m.header.frame_id = m_frame_id;
+    m_imu_out.publish(m);
+
+}
+
+
 
 int main(int argc, char* argv[]) {
 
