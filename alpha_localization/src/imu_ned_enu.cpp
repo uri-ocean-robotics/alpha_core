@@ -42,7 +42,7 @@ IMUNedEnu::IMUNedEnu() {
     
     m_pnh.reset(new ros::NodeHandle("~"));
 
-    m_pnh->param<std::string>("frame_id", m_frame_id, "/imu");
+    m_pnh->param<std::string>("frame_id", m_frame_id, "imu");
 
 }
 
@@ -89,7 +89,7 @@ void IMUNedEnu::f_imu_callback2(const sensor_msgs::ImuConstPtr& msg) {
     tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
 
     tf2::Quaternion newq;
-    newq.setRPY(roll-3.1415926, -pitch, -yaw + 3.1415926/2);
+    newq.setRPY(roll-M_PI, -pitch, -yaw + M_PI_2);
 
     newq = newq.normalize();
 
