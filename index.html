@@ -96,7 +96,7 @@ Localization configuration for ALPHA AUVs.</p>
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h2>
 <div class="section" id="clone-the-repository">
 <h3>Clone the repository<a class="headerlink" href="#clone-the-repository" title="Permalink to this heading"></a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone --single-branch --branch noetic-devel https://github.com/uri-ocean-robotics/alpha_core
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>--single-branch<span class="w"> </span>--branch<span class="w"> </span>noetic-devel<span class="w"> </span>https://github.com/uri-ocean-robotics/alpha_core
 </pre></div>
 </div>
 </div>
@@ -105,14 +105,14 @@ Localization configuration for ALPHA AUVs.</p>
 <p>Currently MVP packages should be build from the source.
 Target platform must be Ubuntu 20.04 because of the dependencies.</p>
 <p>Pull repository and other dependencies</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone --single-branch --branch noetic-devel https://github.com/uri-ocean-robotics/mvp_msgs
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>--single-branch<span class="w"> </span>--branch<span class="w"> </span>noetic-devel<span class="w"> </span>https://github.com/uri-ocean-robotics/mvp_msgs
 </pre></div>
 </div>
 </div>
 <div class="section" id="install-dependencies">
 <h3>Install Dependencies<a class="headerlink" href="#install-dependencies" title="Permalink to this heading"></a></h3>
 <p>Install dependencies</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rosdep install --from-paths src --ignore-src --rosdistro <span class="si">${</span><span class="nv">ROS_DISTRO</span><span class="si">}</span> -y
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rosdep<span class="w"> </span>install<span class="w"> </span>--from-paths<span class="w"> </span>src<span class="w"> </span>--ignore-src<span class="w"> </span>--rosdistro<span class="w"> </span><span class="si">${</span><span class="nv">ROS_DISTRO</span><span class="si">}</span><span class="w"> </span>-y
 </pre></div>
 </div>
 </div>
