@@ -22,6 +22,8 @@ Localization configuration for ALPHA AUVs.
 
 ```bash
 git clone --single-branch --branch noetic-devel https://github.com/uri-ocean-robotics/alpha_core
+cd alpha_core
+git submodule update --init --recursive
 ```
 
 ### MVP Installation
