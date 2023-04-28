@@ -1,5 +1,8 @@
 # Alpha AUV MCU
 
+## In Developing
+change Pi-Pico communication from USB to uart 
+
 ## Building
 
 ```bash
