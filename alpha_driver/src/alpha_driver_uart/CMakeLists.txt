@@ -128,20 +128,20 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-# add_executable(${PROJECT_NAME}_node
-#   src/node.cpp
-#   include/alpha_driver_uart/pico_ros.cpp
-#   include/alpha_driver_uart/pico_driver.cpp
-# )
+add_executable(${PROJECT_NAME}_node
+  src/node.cpp
+  include/alpha_driver_uart/pico_ros.cpp
+  include/alpha_driver_uart/pico_driver.cpp
+)
 
-# add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-# ## Specify libraries to link a library or executable target against
-# target_link_libraries(${PROJECT_NAME}_node
-#   ${catkin_LIBRARIES}
-#   ALPHA_COMMON
-#   NMEA_PARSER
-# )
+## Specify libraries to link a library or executable target against
+target_link_libraries(${PROJECT_NAME}_node
+  ${catkin_LIBRARIES}
+  ALPHA_COMMON
+  NMEA_PARSER
+)
 
 add_executable(serial_test_node
   test/serial_test.cpp

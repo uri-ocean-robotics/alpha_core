@@ -6,18 +6,26 @@
 #include <chrono>
 #include <memory>
 #include <functional>
+#include <iostream>
 // 3rd party
 #include <serial/serial.h>
 // customized
-#include <parameters.h>
-#include <default.h>
+#include <alpha_driver_uart/parameters.h>
+#include <alpha_driver_uart/default.h>
 
 class PicoDriver {
 
+private:
+    std::shared_ptr<serial::Serial> serial_;
+
+    std::function <void(std::string)> serial_callback_;
+
+    void ReceiveLoop();
+    
 public:
     PicoDriver();
 
-    ~PicoDriver();
+    ~PicoDriver(){}
 
     PicoDriver(const SerialParam &param);
 
@@ -28,13 +36,6 @@ public:
     void SetCallback(decltype(serial_callback_) c) { serial_callback_  = c;}
 
     auto GetCallback() -> decltype(serial_callback_) {return serial_callback_;}
-
-private:
-    std::shared_ptr<serial::Serial> serial_;
-
-    std::function <void(std::string)> serial_callback_;
-
-    void ReceiveLoop();
 
 };
 

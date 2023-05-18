@@ -5,15 +5,9 @@
 #include <ros/ros.h>
 #include <std_msgs/String.h>
 // customized
-#include <pico_driver.h>
+#include <alpha_driver_uart/pico_driver.h>
 
 class PicoRos {
-public:
-    PicoRos(const ros::NodeHandle &nh,
-            const ros::NodeHandle &nh_private);
-
-    ~PicoRos(){}
-
 private:
     ros::NodeHandle nh_;
 
@@ -34,6 +28,13 @@ private:
     void CallbackPicoDriver(const std::string &str);
 
     void TestLoop();
+        
+public:
+    PicoRos(const ros::NodeHandle &nh,
+            const ros::NodeHandle &nh_private);
+
+    ~PicoRos(){}
+
 };
 
 #endif // ALPHA_DRIVER_PICO_ROS_H

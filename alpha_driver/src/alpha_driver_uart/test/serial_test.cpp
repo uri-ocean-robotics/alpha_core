@@ -6,6 +6,7 @@
 #include <chrono>
 #include <string>
 #include <unistd.h>
+#include <iostream>
 // ros
 #include <ros/ros.h>
 #include <serial/serial.h>
@@ -23,8 +24,11 @@ public:
 
     // init serial
 
-    ser = new serial::Serial("/dev/ttySC3", 115200, serial::Timeout::simpleTimeout(1000));
-
+    // ser = new serial::Serial("/dev/ttySC3", 115200, serial::Timeout::simpleTimeout(1000));
+    ser = std::make_shared<serial::Serial>(
+        "/dev/ttySC3", 115200, serial::Timeout::simpleTimeout(1000)
+    ); 
+    
     ser->flushInput();
 
     if(ser->isOpen()) {
@@ -56,7 +60,8 @@ private:
   ros::Subscriber sub;
   ros::Publisher pub;
 
-  serial::Serial *ser;
+  // serial::Serial *ser;
+  std::shared_ptr<serial::Serial> ser;
 
 };
 
@@ -101,26 +106,32 @@ void SerialTest::send() {
 
   str = "$1,abcdefghijklmnopqrstuvwxyz\r\n";
   bytes_wrote = ser->write(str);
+  std::cout<<"witre: "<<bytes_wrote <<std::endl;
   usleep(1000);
 
   str = "$2,abcdefghijklmnopqrstuvwxyz\r\n";
   bytes_wrote = ser->write(str);
+  std::cout<<"witre: "<<bytes_wrote <<std::endl;
   usleep(1000);
 
   str = "$3,abcdefghijklmnopqrstuvwxyz\r\n";
   bytes_wrote = ser->write(str);
+  std::cout<<"witre: "<<bytes_wrote <<std::endl;
   usleep(1000);
 
   str = "$4,abcdefghijklmnopqrstuvwxyz\r\n";
   bytes_wrote = ser->write(str);
+  std::cout<<"witre: "<<bytes_wrote <<std::endl;
   usleep(1000);
 
   str = "$5,abcdefghijklmnopqrstuvwxyz\r\n";
   bytes_wrote = ser->write(str);
+  std::cout<<"witre: "<<bytes_wrote <<std::endl;
   usleep(1000);
 
   str = "$6,abcdefghijklmnopqrstuvwxyz\r\n";
   bytes_wrote = ser->write(str);
+  std::cout<<"witre: "<<bytes_wrote <<std::endl;
   usleep(1000);
 
 }
@@ -134,7 +145,7 @@ int main(int argc, char **argv)
   std::thread mainThread{&SerialTest::receive, &example};
   // mainThread.join();
 
-  ros::Rate loop_rate(10);
+  ros::Rate loop_rate(1);
 
   while (ros::ok()) {
     example.send();

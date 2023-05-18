@@ -5,11 +5,11 @@
 
 struct SerialParam {
     std::string port;
-    uint16_t baud;
-    std::string parity;
-    uint8_t databits;
-    uint8_t stopbits;
-    uint16_t timeout;
+    int baud;
+    int timeout;
+    int parity;
+    int databits;
+    int stopbits;
 };
 
 #endif // ALPHA_DRIVER_PARAMETERS_H

@@ -1,20 +1,19 @@
-#include <pico_driver.h> 
+#include <alpha_driver_uart/pico_driver.h> 
 
 PicoDriver::PicoDriver() {
     try
     {
         // make serial object
-        serial_ = std::makr_shared<serial::Serial>(
-            DEFAULT_PORT, DEFAULT_BAUD, serial::Timeout::simpleTimeout(DEFAULT_TIMEOUT)
-        ); 
+        serial_ = std::make_shared<serial::Serial>(
+            DEFAULT_PORT, DEFAULT_BAUD, serial::Timeout::simpleTimeout(DEFAULT_TIMEOUT)); 
 
         // flush the IO buffer
-        serial_->flush();
+        serial_->flushInput();
     }
     catch (serial::IOException& e)
     {
         printf("Pico Driver: serial issue !\n");
-        std::exit(EXIT_FAILURE)
+        std::exit(EXIT_FAILURE);
     }  
 
     // setup the receive thread
@@ -22,25 +21,21 @@ PicoDriver::PicoDriver() {
     t.detach();
 }
 
-PicoDriver::~PicoDriver() {
-
-}
-
 PicoDriver::PicoDriver(const SerialParam &param) {
     try
     {
         // make serial object
-        serial_ = std::makr_shared<serial::Serial>(
+        serial_ = std::make_shared<serial::Serial>(
             param.port, param.baud, serial::Timeout::simpleTimeout(param.timeout)
         ); 
 
         // flush the IO buffer
-        serial_->flush();
+        serial_->flushInput();      
     }
     catch (serial::IOException& e)
     {
         printf("Pico Driver: serial issue !\n");
-        std::exit(EXIT_FAILURE)
+        std::exit(EXIT_FAILURE);
     }  
 
     // setup the receive thread
@@ -50,8 +45,8 @@ PicoDriver::PicoDriver(const SerialParam &param) {
 
 void PicoDriver::ReceiveLoop() {
     std::string eol;
-    eol.append(1,0xd);
-    eol.append(1,0xa);
+    eol.append(1,0xd); // '\r'
+    eol.append(1,0xa); // '\n'
 
     while(true) {
         // receive
