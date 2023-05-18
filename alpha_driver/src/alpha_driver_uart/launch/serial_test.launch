@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <node pkg="alpha_driver_uart" type="serial_test_node" name="test_node" output="screen">
+  </node>
+
+</launch>
