@@ -40,14 +40,35 @@ AlphaDriver::AlphaDriver(std::string port, int baud) :
         m_active(true)
 {
 
-   m_serial_port.open(port);
-   m_serial_port.set_option(boost::asio::serial_port_base::baud_rate(baud));
+    m_serial_port.open(port);
+    m_serial_port.set_option(boost::asio::serial_port_base::baud_rate(baud));
 
     m_serial_read_th = boost::thread(boost::bind(&AlphaDriver::f_serial_read_loop, this));
+
+    // sleep(2);
+    // boost::system::error_code error;
+    // f_flush_port(m_serial_port, FlushType::flush_both, error);
+    // std::cout<<"flush: "<< error.message()<<std::endl;
 }
 
 void AlphaDriver::initialize() {
 
+}
+
+void AlphaDriver::f_flush_port( 
+    boost::asio::serial_port& serial_port,
+    FlushType what,
+    boost::system::error_code& error)
+{
+    if (0 == ::tcflush(serial_port.lowest_layer().native_handle(), what))
+    {
+        error = boost::system::error_code();
+    }
+    else
+    {
+        error = boost::system::error_code(errno,
+                boost::asio::error::get_system_category());
+    }
 }
 
 std::string AlphaDriver::f_serial_read_line() {

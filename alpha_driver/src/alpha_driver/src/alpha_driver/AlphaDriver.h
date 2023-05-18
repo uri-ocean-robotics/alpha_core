@@ -31,6 +31,13 @@
 #include "nmea/nmea.h"
 #include "alpha/common/dictionary.h"
 
+enum FlushType
+{
+  flush_receive = TCIFLUSH,
+  flush_send = TCOFLUSH,
+  flush_both = TCIOFLUSH
+};
+
 
 class AlphaDriver{
 protected:
@@ -54,6 +61,11 @@ protected:
     bool f_serial_send_line(std::string msg);
 
     std::string f_serial_read_line();
+
+    void f_flush_port( 
+            boost::asio::serial_port& serial_port,
+            FlushType what,
+            boost::system::error_code& error);
 
 public:
     AlphaDriver();
