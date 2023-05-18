@@ -6,6 +6,7 @@
 #include <std_msgs/String.h>
 // customized
 #include <alpha_driver_uart/pico_driver.h>
+#include <alpha_driver_uart/thruster_manager.h>
 
 class PicoRos {
 private:
@@ -18,6 +19,8 @@ private:
     ros::Publisher raw_nmea_pub;
 
     std::shared_ptr<PicoDriver> pico_driver_;
+
+    std::shared_ptr<ThrusterManager> thruster_manager_;
 
     SerialParam serial_param_;
 

@@ -5,3 +5,8 @@ Serial:
   databits: 8
   stopbits: 1
   timeout: 1000
+
+Thrusters:
+  channels: 4
+  safety_timeout: 3
+  safety_rate: 10

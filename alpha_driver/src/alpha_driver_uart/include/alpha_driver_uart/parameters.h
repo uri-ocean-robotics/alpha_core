@@ -12,4 +12,10 @@ struct SerialParam {
     int stopbits;
 };
 
+struct ThrusterParam {
+  int channels;
+  int safety_timeout;
+  int safety_rate;
+};
+
 #endif // ALPHA_DRIVER_PARAMETERS_H

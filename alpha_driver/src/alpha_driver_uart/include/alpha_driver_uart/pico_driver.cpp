@@ -66,8 +66,8 @@ void PicoDriver::ReceiveLoop() {
     }
 }
 
-void PicoDriver::SendLine(const std::string &str) {
+size_t PicoDriver::SendLine(const std::string &str) {
     auto str_send  = str + "\r\n";
 
-    auto bytes_wrote = serial_->write(str_send);
+    return serial_->write(str_send);
 }

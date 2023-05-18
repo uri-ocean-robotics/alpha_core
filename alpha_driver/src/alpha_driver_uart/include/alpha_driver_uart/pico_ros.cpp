@@ -19,12 +19,14 @@ PicoRos::PicoRos(const ros::NodeHandle &nh,
     pico_driver_->SetCallback(
           std::bind(&PicoRos::CallbackPicoDriver, this, std::placeholders::_1));
 
+    thruster_manager_ = std::make_shared<ThrusterManager>(nh_, nh_private_, pico_driver_);
+
     std::thread t(std::bind(&PicoRos::TestLoop, this));
     t.detach();
 }
 
 void PicoRos::LoadConfigure() {
-    // serial confugure
+    // serial configure
     nh_private_.param<std::string>("Serial/port", serial_param_.port, DEFAULT_PORT);
     nh_private_.param<int>("Serial/baud", serial_param_.baud, DEFAULT_BAUD);
     nh_private_.param<int>("Serial/timeout", serial_param_.timeout, DEFAULT_TIMEOUT);
@@ -44,32 +46,12 @@ void PicoRos::CallbackPicoDriver(const std::string &str) {
 void PicoRos::TestLoop() {
     std::chrono::milliseconds dura(1);
 
-    ros::Rate r(10);
+    ros::Rate r(1);
     while(ros::ok()) {
 
         std::string str;
 
-        str = "$1,abcdefghijklmnopqrstuvwxyz";
-        pico_driver_->SendLine(str);
-        std::this_thread::sleep_for(dura);
-
-        str = "$2,abcdefghijklmnopqrstuvwxyz";
-        pico_driver_->SendLine(str);
-        std::this_thread::sleep_for(dura);
-
-        str = "$3,abcdefghijklmnopqrstuvwxyz";
-        pico_driver_->SendLine(str);
-        std::this_thread::sleep_for(dura);
-
-        str = "$4,abcdefghijklmnopqrstuvwxyz";
-        pico_driver_->SendLine(str);
-        std::this_thread::sleep_for(dura);
-
-        str = "$5,abcdefghijklmnopqrstuvwxyz";
-        pico_driver_->SendLine(str);
-        std::this_thread::sleep_for(dura);
-
-        str = "$6,abcdefghijklmnopqrstuvwxyz";
+        str = "$ROS,1,abcdefghijk";
         pico_driver_->SendLine(str);
         std::this_thread::sleep_for(dura);
 

@@ -31,7 +31,7 @@ public:
 
     void initialize();
   
-    void SendLine(const std::string &str);
+    size_t SendLine(const std::string &str);
 
     void SetCallback(decltype(serial_callback_) c) { serial_callback_  = c;}
 

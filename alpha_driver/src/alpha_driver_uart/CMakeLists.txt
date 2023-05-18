@@ -115,6 +115,7 @@ catkin_package(
   CATKIN_DEPENDS
     roscpp
     std_msgs
+    geometry_msgs
     serial
 #  DEPENDS system_lib
 )
@@ -132,6 +133,7 @@ add_executable(${PROJECT_NAME}_node
   src/node.cpp
   include/alpha_driver_uart/pico_ros.cpp
   include/alpha_driver_uart/pico_driver.cpp
+  include/alpha_driver_uart/thruster_manager.cpp
 )
 
 add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
