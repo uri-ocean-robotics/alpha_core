@@ -1,0 +1,14 @@
+<launch>
+
+  <!-- start joystick -->
+  <node name="joy_node" pkg="joy" type="joy_node">
+  </node>
+
+  <!-- start pwm command generation -->
+  <node name="test_thruster_node" pkg="alpha_driver_uart" type="test_thruster_node" output="screen">
+  </node>
+
+  <!-- send the pwm to pico -->
+  <include file="$(find alpha_driver_uart)/launch/driver.launch" />
+
+</launch>

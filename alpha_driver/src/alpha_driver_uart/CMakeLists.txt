@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   geometry_msgs
+  sensor_msgs
   mvp_msgs
   serial
 )
@@ -117,6 +118,7 @@ catkin_package(
     std_msgs
     geometry_msgs
     serial
+    sensor_msgs
 #  DEPENDS system_lib
 )
 
@@ -145,11 +147,19 @@ target_link_libraries(${PROJECT_NAME}_node
   NMEA_PARSER
 )
 
-add_executable(serial_test_node
-  test/serial_test.cpp
+add_executable(test_serial_node
+  test/test_serial.cpp
 )
 
-target_link_libraries(serial_test_node
+target_link_libraries(test_serial_node
+  ${catkin_LIBRARIES}
+)
+
+add_executable(test_thruster_node
+  test/test_thruster.cpp
+)
+
+target_link_libraries(test_thruster_node
   ${catkin_LIBRARIES}
 )
 

@@ -30,7 +30,7 @@ PicoDriver::PicoDriver(const SerialParam &param) {
         ); 
 
         // flush the IO buffer
-        serial_->flushInput();      
+        serial_->flush();      
     }
     catch (serial::IOException& e)
     {
@@ -60,9 +60,9 @@ void PicoDriver::ReceiveLoop() {
             }
         }
 
-        // sleep 1 millisecond
-        std::chrono::milliseconds dura(1);
-        std::this_thread::sleep_for(dura);
+        // // sleep 1 millisecond
+        // std::chrono::milliseconds dura(1);
+        // std::this_thread::sleep_for(dura);
     }
 }
 

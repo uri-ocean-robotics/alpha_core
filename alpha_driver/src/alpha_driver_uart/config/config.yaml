@@ -9,4 +9,4 @@ Serial:
 Thrusters:
   channels: 4
   safety_timeout: 3
-  safety_rate: 10
+  safety_rate: 1

@@ -30,7 +30,7 @@ private:
 
     void CallbackPicoDriver(const std::string &str);
 
-    void TestLoop();
+    // void TestLoop();
         
 public:
     PicoRos(const ros::NodeHandle &nh,

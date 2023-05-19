@@ -21,8 +21,8 @@ PicoRos::PicoRos(const ros::NodeHandle &nh,
 
     thruster_manager_ = std::make_shared<ThrusterManager>(nh_, nh_private_, pico_driver_);
 
-    std::thread t(std::bind(&PicoRos::TestLoop, this));
-    t.detach();
+    // std::thread t(std::bind(&PicoRos::TestLoop, this));
+    // t.detach();
 }
 
 void PicoRos::LoadConfigure() {
@@ -40,21 +40,27 @@ void PicoRos::CallbackRawNMEA(const std_msgs::String::ConstPtr &msg) {
 }
 
 void PicoRos::CallbackPicoDriver(const std::string &str) {
-    printf("%s",str.c_str());
+    //! DEBUG:
+    // printf("%s", str.c_str());
+
+    // publish the raw string from pico
+    std_msgs::String raw_msg;
+    raw_msg.data = str;
+    raw_nmea_pub.publish(raw_msg);
 }
 
-void PicoRos::TestLoop() {
-    std::chrono::milliseconds dura(1);
+// void PicoRos::TestLoop() {
+//     std::chrono::milliseconds dura(1);
 
-    ros::Rate r(1);
-    while(ros::ok()) {
+//     ros::Rate r(1);
+//     while(ros::ok()) {
 
-        std::string str;
+//         std::string str;
 
-        str = "$ROS,1,abcdefghijk";
-        pico_driver_->SendLine(str);
-        std::this_thread::sleep_for(dura);
+//         str = "$ROS,1,abcdefghijk";
+//         pico_driver_->SendLine(str);
+//         std::this_thread::sleep_for(dura);
 
-        r.sleep();
-    }  
-}
+//         r.sleep();
+//     }  
+// }

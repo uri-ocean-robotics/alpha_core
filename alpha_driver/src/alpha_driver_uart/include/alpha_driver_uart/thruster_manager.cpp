@@ -35,7 +35,25 @@ void ThrusterManager::LoadConfigure() {
         pwm.mode = static_cast<uint8_t>(PwmMode::Thruster);
         pwm_control_.push_back(pwm);
     }
+}
 
+void ThrusterManager::Initialize() {
+    std::chrono::milliseconds dura_small(100);
+    std::chrono::milliseconds dura_large(1000);
+
+    // initialize the thruster
+    for(const auto& i : pwm_control_) {
+        InitializePWM(i.channel, i.mode);
+        std::this_thread::sleep_for(dura_small);
+    }
+
+    // sleep some time to start next thread
+    // std::this_thread::sleep_for(dura_large);
+
+    //! NOTE: each pico pwm device has it's own saftey check timer, do we really need this one ?????
+    // start a safety loop to monitor latest thruster pwm commands
+    std::thread t(std::bind(&ThrusterManager::SafetyLoop, this));
+    t.detach();
 }
 
 void ThrusterManager::SetupROS() {
@@ -59,17 +77,6 @@ void ThrusterManager::SetupROS() {
         pwm_subs_.emplace_back(sub);
     }
 
-}
-
-void ThrusterManager::Initialize() {
-    // initialize the thruster
-    for(const auto& i : pwm_control_) {
-        InitializePWM(i.channel, i.mode);
-    }
-
-    // start a safety loop to monitor latest thruster pwm commands
-    std::thread t(std::bind(&ThrusterManager::SafetyLoop, this));
-    t.detach();
 }
 
 void ThrusterManager::CallbackPWM(const std_msgs::Float64::ConstPtr &msg, 
@@ -100,9 +107,6 @@ void ThrusterManager::SafetyLoop() {
             }
         }
 
-        // pico_driver_->SendLine("$PWMC,1,123");
-        // std::this_thread::sleep_for(dura_small);
-
         std::this_thread::sleep_for(dura_large);
     }    
 }
@@ -113,8 +117,9 @@ void ThrusterManager::SendPWM(int channel, double pwm) {
     msg.construct(NMEA_FORMAT_PWM_CMD, NMEA_PWM_CMD, channel, pwm);
 
     // serial send 
-    pico_driver_->SendLine(std::string(msg.get_raw()));
+    auto size = pico_driver_->SendLine(std::string(msg.get_raw()));
 
+    // printf("pwm: %ld\n", size);
 }
 
 void ThrusterManager::InitializePWM(int channel, int mode) {
@@ -123,5 +128,7 @@ void ThrusterManager::InitializePWM(int channel, int mode) {
     msg.construct(NMEA_FORMAT_PWM_INIT, NMEA_PWM_INITIALIZE, channel, mode);
 
     // serial send
-    pico_driver_->SendLine(std::string(msg.get_raw()));
+    auto size = pico_driver_->SendLine(std::string(msg.get_raw()));
+
+    // printf("init byte: %ld, str=%s\n", size, msg.get_raw());
 }
