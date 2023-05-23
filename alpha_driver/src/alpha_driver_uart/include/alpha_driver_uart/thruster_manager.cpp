@@ -21,7 +21,7 @@ void ThrusterManager::LoadConfigure() {
     nh_private_.param<int>("Thrusters/safety_timeout", thruster_param_.safety_timeout, DEFAULT_SAFETY_TIMEOUT);
     nh_private_.param<int>("Thrusters/safety_rate", thruster_param_.safety_rate, DEFAULT_SAFETY_RATE);
 
-    //! TEST:
+    //! DEBUG:
     // std::cout << "Thrusters" << std::endl;
     // std::cout << "  channels: " << thruster_param_.channels;
     // std::cout << "  safety_timeout: " << thruster_param_.safety_timeout;
@@ -38,17 +38,12 @@ void ThrusterManager::LoadConfigure() {
 }
 
 void ThrusterManager::Initialize() {
-    std::chrono::milliseconds dura_small(100);
-    std::chrono::milliseconds dura_large(1000);
-
-    // initialize the thruster
-    for(const auto& i : pwm_control_) {
-        InitializePWM(i.channel, i.mode);
-        std::this_thread::sleep_for(dura_small);
-    }
-
-    // sleep some time to start next thread
-    // std::this_thread::sleep_for(dura_large);
+    //! NOTE: the pwm init moved to to pico
+    // std::chrono::milliseconds dura_small(100);
+    // for(const auto& i : pwm_control_) {
+    //     InitializePWM(i.channel, i.mode);
+    //     std::this_thread::sleep_for(dura_small);
+    // }
 
     //! NOTE: each pico pwm device has it's own saftey check timer, do we really need this one ?????
     // start a safety loop to monitor latest thruster pwm commands
@@ -118,8 +113,6 @@ void ThrusterManager::SendPWM(int channel, double pwm) {
 
     // serial send 
     auto size = pico_driver_->SendLine(std::string(msg.get_raw()));
-
-    // printf("pwm: %ld\n", size);
 }
 
 void ThrusterManager::InitializePWM(int channel, int mode) {
@@ -129,6 +122,4 @@ void ThrusterManager::InitializePWM(int channel, int mode) {
 
     // serial send
     auto size = pico_driver_->SendLine(std::string(msg.get_raw()));
-
-    // printf("init byte: %ld, str=%s\n", size, msg.get_raw());
 }

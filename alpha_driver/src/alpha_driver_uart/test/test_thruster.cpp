@@ -51,10 +51,10 @@ void Testthruster::CallbackJoy(const sensor_msgs::Joy::ConstPtr& input) {
     std_msgs::Float64 pwm_ch2;
     std_msgs::Float64 pwm_ch3;
 
-    pwm_ch0.data = ch0;
-    pwm_ch1.data = ch1;
-    pwm_ch2.data = ch2;
-    pwm_ch3.data = ch3;
+    pwm_ch0.data = ch0*0.5;
+    pwm_ch1.data = ch1*0.5;
+    pwm_ch2.data = ch2*0.5;
+    pwm_ch3.data = ch3*0.5;
 
     pub0.publish(pwm_ch0);
     pub1.publish(pwm_ch1);

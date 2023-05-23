@@ -8,7 +8,7 @@ PicoDriver::PicoDriver() {
             DEFAULT_PORT, DEFAULT_BAUD, serial::Timeout::simpleTimeout(DEFAULT_TIMEOUT)); 
 
         // flush the IO buffer
-        serial_->flushInput();
+        serial_->flush();
     }
     catch (serial::IOException& e)
     {
@@ -60,9 +60,9 @@ void PicoDriver::ReceiveLoop() {
             }
         }
 
-        // // sleep 1 millisecond
-        // std::chrono::milliseconds dura(1);
-        // std::this_thread::sleep_for(dura);
+        // sleep 1 millisecond, really need that to save some cost ???
+        std::chrono::milliseconds dura(1);
+        std::this_thread::sleep_for(dura);
     }
 }
 
