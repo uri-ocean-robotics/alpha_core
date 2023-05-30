@@ -14,11 +14,12 @@
     You should have received a copy of the GNU General Public License
     along with the project.  If not, see <https://www.gnu.org/licenses/>.
 
-    Author: Emir Cem Gezer
-    Email: emircem@uri.edu;emircem.gezer@gmail.com
-    Year: 2022
+    Authors: 
+      Emir Cem Gezer <emircem.gezer@gmail.com> 
+      Lin Zhao <linzhao@uri.edu>
+    Year: 2022-2023
 
-    Copyright (C) 2022 Smart Ocean Systems Laboratory
+    Copyright (C) 2022-2023 Smart Ocean Systems Laboratory
 */
 
 #ifndef ALPHA_MCU_PWM_CONTROLLER_H

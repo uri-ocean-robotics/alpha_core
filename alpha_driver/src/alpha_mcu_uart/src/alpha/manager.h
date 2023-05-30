@@ -14,11 +14,11 @@
     You should have received a copy of the GNU General Public License
     along with the project.  If not, see <https://www.gnu.org/licenses/>.
 
-    Author: Lin Zhao
-    Email: linzhao@uri.edu
-    Year: 2023
+    Authors: 
+      Lin Zhao <linzhao@uri.edu>
+    Year: 2023-2023
 
-    Copyright (C) 2023 Smart Ocean Systems Laboratory
+    Copyright (C) 2023-2023 Smart Ocean Systems Laboratory
 */
 
 #ifndef ALPHA_MCU_MANAGER_H
