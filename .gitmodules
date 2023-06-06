@@ -10,3 +10,7 @@
 [submodule "external/xsens_mti_ros_driver"]
 	path = external/xsens_mti_ros_driver
 	url = https://github.com/GSO-soslab/xsens_mti_ros_driver.git
+[submodule "external/bluerobotics_pressure"]
+	path = external/bluerobotics_pressure
+	url = https://github.com/GSO-soslab/bluerobotics_pressure
+	branch = main
