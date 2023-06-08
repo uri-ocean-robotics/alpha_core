@@ -8,13 +8,17 @@
 class Testthruster
 {
 public:
-    Testthruster() {
-        sub = nh.subscribe<sensor_msgs::Joy> ("/joy", 10, &Testthruster::CallbackJoy, this);
+    Testthruster(const ros::NodeHandle &nh,
+                 const ros::NodeHandle &nh_private) 
+            :nh_(nh), nh_private_(nh_private)
+    {
+        sub = nh_.subscribe<sensor_msgs::Joy> ("/joy", 10, &Testthruster::CallbackJoy, this);
+        pub0 = nh_.advertise<std_msgs::Float64>("control/pwm_chan0", 10);
+        pub1 = nh_.advertise<std_msgs::Float64>("control/pwm_chan1", 10);
+        pub2 = nh_.advertise<std_msgs::Float64>("control/pwm_chan2", 10);
+        pub3 = nh_.advertise<std_msgs::Float64>("control/pwm_chan3", 10);
 
-        pub0 = nh.advertise<std_msgs::Float64>("/control/pwm_chan0", 10);
-        pub1 = nh.advertise<std_msgs::Float64>("/control/pwm_chan1", 10);
-        pub2 = nh.advertise<std_msgs::Float64>("/control/pwm_chan2", 10);
-        pub3 = nh.advertise<std_msgs::Float64>("/control/pwm_chan3", 10);
+        nh_private_.param<double>("factor", factor, 0.5);
     }
 
     ~Testthruster() {}
@@ -22,7 +26,8 @@ public:
     void CallbackJoy(const sensor_msgs::Joy::ConstPtr& input);
 
 private:
-    ros::NodeHandle nh;
+    ros::NodeHandle nh_;
+    ros::NodeHandle nh_private_;
 
     ros::Subscriber sub;
 
@@ -30,6 +35,8 @@ private:
     ros::Publisher pub1;
     ros::Publisher pub2;
     ros::Publisher pub3;
+
+    double factor;
 };
 
 void Testthruster::CallbackJoy(const sensor_msgs::Joy::ConstPtr& input) {
@@ -65,7 +72,11 @@ void Testthruster::CallbackJoy(const sensor_msgs::Joy::ConstPtr& input) {
 int main(int argc, char **argv) {
     ros::init(argc, argv, "Simple_Example_Node");
 
-    Testthruster  example;
+    ros::NodeHandle nh("");
+
+    ros::NodeHandle nh_private("~");
+
+    Testthruster  example(nh, nh_private);
 
     ros::spin();
     
