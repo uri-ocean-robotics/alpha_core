@@ -56,6 +56,7 @@ void PicoRos::LoadConfigure() {
     nh_private_.param<int>("Serial/parity", serial_param_.parity, DEFAULT_PARITY);
     nh_private_.param<int>("Serial/databits", serial_param_.databits, DEFAULT_DATABITS);
     nh_private_.param<int>("Serial/stopbits", serial_param_.stopbits, DEFAULT_STOPBITS);
+
 }
 
 void PicoRos::CallbackRawNMEA(const std_msgs::String::ConstPtr &msg) {

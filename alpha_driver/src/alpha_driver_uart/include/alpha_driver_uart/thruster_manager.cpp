@@ -39,36 +39,83 @@ ThrusterManager::ThrusterManager(const ros::NodeHandle &nh,
 }
 
 void ThrusterManager::LoadConfigure() {
-    // load configure
-    nh_private_.param<int>("Thrusters/channels", thruster_param_.channels, DEFAULT_CHANNELS);
-    nh_private_.param<int>("Thrusters/safety_timeout", thruster_param_.safety_timeout, DEFAULT_SAFETY_TIMEOUT);
-    nh_private_.param<int>("Thrusters/safety_rate", thruster_param_.safety_rate, DEFAULT_SAFETY_RATE);
+    // system config
+    nh_private_.param<int>("Thrusters/safety_timeout", 
+        system_param_.safety_timeout, DEFAULT_SAFETY_TIMEOUT);
+    nh_private_.param<int>("Thrusters/safety_rate", 
+        system_param_.safety_rate, DEFAULT_SAFETY_RATE);
+
+    // pwm config
+    std::vector<std::string> keys;
+
+    nh_.getParamNames(keys);
+
+    auto ns = nh_private_.getNamespace();
+
+    auto param_name = ns + "/" + DEFAULT_CONF_PWM_CONTROL;    
+
+    for(const auto &i : keys) {
+        if(i.find(param_name) != std::string::npos) {
+            auto pp = i.substr(param_name.size() + 1, i.size());
+            auto name = pp.substr(0, pp.find('/'));
+            auto param = pp.substr(pp.find('/') + 1, pp.size());
+
+            if(param == DEFAULT_CONF_PWM_CHANNEL) {
+                int channel;
+                nh_.getParam(i, channel);
+                pwm_control_[name].channel = channel;
+            } else if (DEFAULT_CONF_PWM_TOPIC) {
+                std::string topic;
+                nh_.getParam(i, topic);
+                pwm_control_[name].topic = topic;
+            } else if (param == DEFAULT_CONF_PWM_MODE) {
+                std::string mode;
+                nh_.getParam(i, mode);
+                if(mode == DEFAULT_CONF_PWM_MODE_OPT_THRUSTER) {
+                    pwm_control_[name].mode = static_cast<uint8_t>(PwmMode::Thruster);
+                } else if (mode == DEFAULT_CONF_PWM_MODE_OPT_PURE) {
+                    pwm_control_[name].mode = static_cast<uint8_t>(PwmMode::Pure);
+                } else {
+
+                }
+            } else {
+
+            }
+        }
+    } 
 
     //! DEBUG:
-    // std::cout << "Thrusters" << std::endl;
-    // std::cout << "  channels: " << thruster_param_.channels;
-    // std::cout << "  safety_timeout: " << thruster_param_.safety_timeout;
-    // std::cout << "  safety_rate: " << thruster_param_.safety_rate;
-    // std::cout << std::endl;
+    // for(const auto& i : pwm_control_) {
+    //     printf("name=%s, chan=%d, mode=%d, topic=%s\n", 
+    //             i.first.c_str(), i.second.channel,
+    //             i.second.mode, i.second.topic.c_str());
+    // }
 
-    for(size_t i=0; i<thruster_param_.channels; i++) {
-        pwm_control_t pwm;
-        pwm.channel = i;
-        pwm.topic = "control/pwm_chan" + std::to_string(i);
-        pwm.mode = static_cast<uint8_t>(PwmMode::Thruster);
-        pwm_control_.push_back(pwm);
-    }
+    for(const auto &i : pwm_control_) {
+        for(const auto &j : pwm_control_) {
+            if(i.first == j.first) {
+                continue;
+            }
+
+            if(i.second.topic.empty()) {
+                throw alpha_driver_ros_exception("empty topic name");
+            }
+
+            if(i.second.channel == j.second.channel) {
+                throw alpha_driver_ros_exception("multiple thrusters with same pwm channel found");
+            }
+
+            if(i.second.topic == j.second.topic) {
+                throw alpha_driver_ros_exception("multiple thrusters with same topic id found");
+            }
+        }
+    }    
 }
 
 void ThrusterManager::Initialize() {
-    //! NOTE: the pwm init moved to to pico
-    // std::chrono::milliseconds dura_small(100);
-    // for(const auto& i : pwm_control_) {
-    //     InitializePWM(i.channel, i.mode);
-    //     std::this_thread::sleep_for(dura_small);
-    // }
 
-    //! NOTE: each pico pwm device has it's own saftey check timer, do we really need this one ?????
+    //! NOTE: each pico pwm device has it's own saftey check timer, 
+    //        do we really need this one ?????
     // start a safety loop to monitor latest thruster pwm commands
     std::thread t(std::bind(&ThrusterManager::SafetyLoop, this));
     t.detach();
@@ -81,14 +128,14 @@ void ThrusterManager::SetupROS() {
     // sub for multiple thresters
     for(const auto& i : pwm_control_) {
         auto sub = nh_.subscribe<std_msgs::Float64>(
-            i.topic,
+            i.second.topic,
             6,
             std::bind(
                 &ThrusterManager::CallbackPWM,
                 this,
                 std::placeholders::_1,
-                i.channel,
-                i.mode
+                i.second.channel,
+                i.second.mode
             )
         );
 
@@ -107,7 +154,7 @@ void ThrusterManager::CallbackPWM(const std_msgs::Float64::ConstPtr &msg,
 
 void ThrusterManager::SafetyLoop() {
 
-    int sleep_time = 1.0 / thruster_param_.safety_rate * 1000;
+    int sleep_time = 1.0 / system_param_.safety_rate * 1000;
     std::chrono::milliseconds dura_small(1);
     std::chrono::milliseconds dura_large(sleep_time);
 
@@ -115,10 +162,10 @@ void ThrusterManager::SafetyLoop() {
 
         auto dt = ros::Time::now() - last_pwm_time_;
 
-        if(dt.toSec() > thruster_param_.safety_timeout) {
+        if(dt.toSec() > system_param_.safety_timeout) {
             for(const auto& i : pwm_control_) {
                 // send stop pwm: usually take 100 microseconds 
-                SendPWM(i.channel, 0);
+                SendPWM(i.second.channel, 0);
 
                 // sleep for a very short amount of time, really need this ?
                 std::this_thread::sleep_for(dura_small);

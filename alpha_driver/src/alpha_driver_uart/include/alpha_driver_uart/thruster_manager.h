@@ -36,6 +36,11 @@
 #include <alpha/common/dictionary.h>
 #include <nmea/nmea.h>
 
+class alpha_driver_ros_exception : public std::runtime_error {
+public:
+    explicit alpha_driver_ros_exception(const std::string& message) : std::runtime_error(message){}
+};
+
 class ThrusterManager {
   
 private:
@@ -49,13 +54,15 @@ private:
 
     std::shared_ptr<PicoDriver> pico_driver_;
 
-    ThrusterParam thruster_param_;
+    SystemParam system_param_;
 
     typedef struct pwm_control_t : pwm_t {
         std::string topic;
     } pwm_control_t;
 
-    std::vector<pwm_control_t> pwm_control_;
+    // std::vector<pwm_control_t> pwm_control_;
+
+    std::map<std::string, pwm_control_t> pwm_control_;
 
     ros::Time last_pwm_time_;
 

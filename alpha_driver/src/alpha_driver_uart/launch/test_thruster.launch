@@ -10,7 +10,7 @@
   <node ns="$(arg robot_name)" name="test_thruster_node" pkg="alpha_driver_uart" 
         type="test_thruster_node" output="screen">
 
-        <param name="factor" value="0.7"       type="double" />
+        <param name="factor" value="0.7" type="double" />
   </node>
 
   <!-- send the pwm to pico -->

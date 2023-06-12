@@ -35,8 +35,7 @@ struct SerialParam {
     int stopbits;
 };
 
-struct ThrusterParam {
-  int channels;
+struct SystemParam {
   int safety_timeout;
   int safety_rate;
 };
