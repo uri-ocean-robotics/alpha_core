@@ -10,7 +10,10 @@
   <node ns="$(arg robot_name)" name="test_thruster_node" pkg="alpha_driver_uart" 
         type="test_thruster_node" output="screen">
 
-        <param name="factor" value="0.5" type="double" />
+        <param name="factor_joy0" value="0.5" type="double" />
+        <param name="factor_joy1" value="0.5" type="double" />
+        <param name="factor_joy2" value="0.5" type="double" />
+        <param name="factor_joy3" value="0.5" type="double" />
 
         <remap from="joy_axes0" to="control/pwm_chan0" />
         <remap from="joy_axes1" to="control/pwm_chan1" />

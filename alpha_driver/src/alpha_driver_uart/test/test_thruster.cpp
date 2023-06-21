@@ -18,7 +18,10 @@ public:
         pub2 = nh_.advertise<std_msgs::Float64>("joy_axes2", 10);
         pub3 = nh_.advertise<std_msgs::Float64>("joy_axes3", 10);
 
-        nh_private_.param<double>("factor", factor, 0.5);
+        nh_private_.param<double>("factor_joy0", factor_joy0, 0.5);
+        nh_private_.param<double>("factor_joy1", factor_joy1, 0.5);
+        nh_private_.param<double>("factor_joy2", factor_joy2, 0.5);
+        nh_private_.param<double>("factor_joy3", factor_joy3, 0.5);
     }
 
     ~Testthruster() {}
@@ -36,7 +39,10 @@ private:
     ros::Publisher pub2;
     ros::Publisher pub3;
 
-    double factor;
+    double factor_joy0;
+    double factor_joy1;
+    double factor_joy2;
+    double factor_joy3;
 };
 
 void Testthruster::CallbackJoy(const sensor_msgs::Joy::ConstPtr& input) {
@@ -46,11 +52,12 @@ void Testthruster::CallbackJoy(const sensor_msgs::Joy::ConstPtr& input) {
     auto axes2 = input->axes[2];
     auto axes3 = input->axes[3];
 
-    std::cout<<std::endl;
-    std::cout<<"axes0: " << axes0 << std::endl;
-    std::cout<<"axes1: " << axes1 << std::endl;
-    std::cout<<"axes2: " << axes2 << std::endl;
-    std::cout<<"axes3: " << axes3 << std::endl;
+    auto button_LB = input->buttons[4];
+    // std::cout<<std::endl;
+    // std::cout<<"axes0: " << axes0 << std::endl;
+    // std::cout<<"axes1: " << axes1 << std::endl;
+    // std::cout<<"axes2: " << axes2 << std::endl;
+    // std::cout<<"axes3: " << axes3 << std::endl;
 
     // send cmd to pico ros driver
     std_msgs::Float64 pwm_axes0;
@@ -58,15 +65,18 @@ void Testthruster::CallbackJoy(const sensor_msgs::Joy::ConstPtr& input) {
     std_msgs::Float64 pwm_axes2;
     std_msgs::Float64 pwm_axes3;
 
-    pwm_axes0.data = axes0*0.5;
-    pwm_axes1.data = axes1*0.5;
-    pwm_axes2.data = axes2*0.5;
-    pwm_axes3.data = axes3*0.5;
+    pwm_axes0.data = axes0*factor_joy0;
+    pwm_axes1.data = axes1*factor_joy1;
+    pwm_axes2.data = axes2*factor_joy2;
+    pwm_axes3.data = axes3*factor_joy3;
 
-    pub0.publish(pwm_axes0);
-    pub1.publish(pwm_axes1);
-    pub2.publish(pwm_axes2);
-    pub3.publish(pwm_axes3);
+    if(button_LB == 1) {
+        pub0.publish(pwm_axes0);
+        pub1.publish(pwm_axes1);
+        pub2.publish(pwm_axes2);
+        pub3.publish(pwm_axes3);
+    }
+
 }
 
 int main(int argc, char **argv) {
