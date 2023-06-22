@@ -59,7 +59,7 @@ public:
     PicoRos(const ros::NodeHandle &nh,
             const ros::NodeHandle &nh_private);
 
-    ~PicoRos(){}
+    ~PicoRos();
 
 };
 

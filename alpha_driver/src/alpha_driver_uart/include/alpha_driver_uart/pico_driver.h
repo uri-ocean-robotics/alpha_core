@@ -30,6 +30,7 @@
 #include <memory>
 #include <functional>
 #include <iostream>
+#include <atomic>
 // 3rd party
 #include <serial/serial.h>
 // customized
@@ -44,11 +45,13 @@ private:
     std::function <void(std::string)> serial_callback_;
 
     void ReceiveLoop();
+
+    std::atomic<bool> close_;
     
 public:
     PicoDriver();
 
-    ~PicoDriver(){}
+    ~PicoDriver();
 
     PicoDriver(const SerialParam &param);
 

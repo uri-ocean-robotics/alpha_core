@@ -23,7 +23,7 @@
 
 #include <alpha_driver_uart/pico_driver.h> 
 
-PicoDriver::PicoDriver() {
+PicoDriver::PicoDriver(): close_(false) {
     try
     {
         // make serial object
@@ -44,26 +44,46 @@ PicoDriver::PicoDriver() {
     t.detach();
 }
 
-PicoDriver::PicoDriver(const SerialParam &param) {
+PicoDriver::PicoDriver(const SerialParam &param): close_(false) {
     try
     {
-        // make serial object
-        serial_ = std::make_shared<serial::Serial>(
-            param.port, param.baud, serial::Timeout::simpleTimeout(param.timeout)
-        ); 
+        serial_ = std::make_shared<serial::Serial>(); 
+
+        serial::Timeout to = serial::Timeout::simpleTimeout(param.timeout);
+        serial_->setPort(param.port);
+        serial_->setBaudrate(param.baud);
+        serial_->setTimeout(to);
+        serial_->setBytesize((serial::bytesize_t)param.databits);
+        serial_->setParity((serial::parity_t)param.parity);
+        serial_->setStopbits((serial::stopbits_t)param.stopbits);
+        serial_->setFlowcontrol(serial::flowcontrol_none);
+        serial_->open();
 
         // flush the IO buffer
         serial_->flush();      
     }
     catch (serial::IOException& e)
     {
-        printf("Pico Driver: serial issue !\n");
+        std::cerr << "Pico Driver: serial error = " << e.what() <<std::endl;
         std::exit(EXIT_FAILURE);
     }  
 
+    if(!serial_->isOpen()){
+        std::cout<< "Pico Driver: port not open\n";
+        std::exit(EXIT_FAILURE);
+    }
+
     // setup the receive thread
     std::thread t(std::bind(&PicoDriver::ReceiveLoop, this));
-    t.detach();
+    t.detach(); 
+}
+
+PicoDriver::~PicoDriver() {
+
+    if(serial_->isOpen()) {
+        close_ = true;
+        serial_->close();
+    }
 }
 
 void PicoDriver::ReceiveLoop() {
@@ -71,7 +91,7 @@ void PicoDriver::ReceiveLoop() {
     eol.append(1,0xd); // '\r'
     eol.append(1,0xa); // '\n'
 
-    while(true) {
+    while(!close_) {
         // receive
         if(serial_->available()){
             // read one line
@@ -83,9 +103,9 @@ void PicoDriver::ReceiveLoop() {
             }
         }
 
-        // sleep 1 millisecond, really need that to save some cost ???
-        std::chrono::milliseconds dura(1);
-        std::this_thread::sleep_for(dura);
+        // //sleep 1 millisecond, really need that to save some cost ???
+        // std::chrono::milliseconds dura(1);
+        // std::this_thread::sleep_for(dura);
     }
 }
 

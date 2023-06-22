@@ -48,6 +48,9 @@ PicoRos::PicoRos(const ros::NodeHandle &nh,
     // t.detach();
 }
 
+PicoRos::~PicoRos() {
+}
+
 void PicoRos::LoadConfigure() {
     // serial configure
     nh_private_.param<std::string>("Serial/port", serial_param_.port, DEFAULT_PORT);
