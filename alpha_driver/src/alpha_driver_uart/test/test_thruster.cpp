@@ -71,10 +71,21 @@ void Testthruster::CallbackJoy(const sensor_msgs::Joy::ConstPtr& input) {
     pwm_axes3.data = axes3*factor_joy3;
 
     if(button_LB == 1) {
-        pub0.publish(pwm_axes0);
-        pub1.publish(pwm_axes1);
-        pub2.publish(pwm_axes2);
-        pub3.publish(pwm_axes3);
+        if(axes0 != 0.0) {
+            pub0.publish(pwm_axes0);
+        }
+
+        if(axes1 != 0.0) {
+            pub1.publish(pwm_axes1);
+        }
+
+        if(axes2 != 0.0) {
+            pub2.publish(pwm_axes2);
+        }        
+
+        if(axes3 != 0.0) {
+            pub3.publish(pwm_axes3);
+        }
     }
 
 }
