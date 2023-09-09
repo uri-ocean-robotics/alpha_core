@@ -43,7 +43,13 @@ IMUNedEnu::IMUNedEnu() {
     m_pnh.reset(new ros::NodeHandle("~"));
 
     m_pnh->param<std::string>("frame_id", m_frame_id, "imu");
+    m_pnh->param<double>("roll_offset", roll_offset, 3.1415926);
+    m_pnh->param<double>("pitch_offset", pitch_offset, 0.0);
+    m_pnh->param<double>("yaw_offset", yaw_offset, 1.5707);
 
+    m_pnh->param<double>("roll_reverse", roll_reverse, 1.0);
+    m_pnh->param<double>("pitch_reverse", pitch_reverse, -1.0);
+    m_pnh->param<double>("yaw_reverse", yaw_reverse, -1.0);
 }
 
 void IMUNedEnu::f_imu_callback(const sensor_msgs::ImuConstPtr& msg) {
@@ -89,7 +95,11 @@ void IMUNedEnu::f_imu_callback2(const sensor_msgs::ImuConstPtr& msg) {
     tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
 
     tf2::Quaternion newq;
-    newq.setRPY(roll-M_PI, -pitch, -yaw + M_PI_2);
+    // newq.setRPY(roll-M_PI, -pitch, -yaw + M_PI_2); default?
+    // newq.setRPY(roll, -pitch, -yaw + M_PI_2);
+    newq.setRPY(roll*roll_reverse   + roll_offset, 
+                pitch*pitch_reverse + pitch_offset,
+                yaw*yaw_reverse     + yaw_offset);
 
     newq = newq.normalize();
 

@@ -38,7 +38,15 @@ class IMUNedEnu {
         ros::Subscriber m_imu_in;
 
         std::string m_frame_id;
+
+        double roll_offset;
+        double pitch_offset;
+        double yaw_offset;
         
+        double roll_reverse;
+        double pitch_reverse;
+        double yaw_reverse;
+
         void f_imu_callback(const sensor_msgs::ImuConstPtr& msg);
         void f_imu_callback2(const sensor_msgs::ImuConstPtr& msg);
 
