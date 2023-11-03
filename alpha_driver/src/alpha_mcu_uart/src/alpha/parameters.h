@@ -42,7 +42,7 @@
 #define PWM_PULSE_MIN 1100
 #define PWM_PULSE_CTR (PWM_PULSE_MAX + PWM_PULSE_MIN) / 2.0
 
-#define PWM_REPORT_PERIOD 100 // default: 150 ?
+#define PWM_REPORT_PERIOD 1000 // default: 150 ?
 
 
 // #define REPORT_BAROMETER_PERIOD 200
