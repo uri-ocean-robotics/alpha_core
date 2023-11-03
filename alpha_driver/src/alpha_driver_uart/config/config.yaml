@@ -30,3 +30,13 @@ PWM_Control:
     channel: 3
     mode: thruster
     topic: control/pwm_chan3
+
+  pwm_chan4:
+    channel: 4
+    mode: thruster
+    topic: control/pwm_chan4
+
+  pwm_chan5:
+    channel: 5
+    mode: thruster
+    topic: control/pwm_chan4    

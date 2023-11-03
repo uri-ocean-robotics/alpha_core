@@ -58,6 +58,10 @@ private:
 
     PwmController* m_pwm_chan3;
 
+    PwmController* m_pwm_chan4;
+
+    PwmController* m_pwm_chan5;
+
     /**
      * UART related
     */

@@ -42,11 +42,15 @@ Manager::Manager() {
     m_pwm_chan1 = new PwmController(PWM_CHANNEL_PIN_1, 1);
     m_pwm_chan2 = new PwmController(PWM_CHANNEL_PIN_2, 2);
     m_pwm_chan3 = new PwmController(PWM_CHANNEL_PIN_3, 3);
+    m_pwm_chan4 = new PwmController(PWM_CHANNEL_PIN_4, 4);
+    m_pwm_chan5 = new PwmController(PWM_CHANNEL_PIN_5, 5);
 
     m_pwm_chan0->initialize();
     m_pwm_chan1->initialize();
     m_pwm_chan2->initialize();
     m_pwm_chan3->initialize();
+    m_pwm_chan4->initialize();
+    m_pwm_chan5->initialize();
 }
 
 Manager::~Manager() {
@@ -54,6 +58,8 @@ Manager::~Manager() {
     delete m_pwm_chan1;
     delete m_pwm_chan2;
     delete m_pwm_chan3;
+    delete m_pwm_chan4;
+    delete m_pwm_chan5;
 }
 
 void Manager::ReceiveMsg() {
@@ -157,6 +163,14 @@ bool Manager::SetPWMInitialized(int channel, int mode) {
             m_pwm_chan3->set_mode(mode);
             m_pwm_chan3->enable();
             break;
+        case 4:
+            m_pwm_chan4->set_mode(mode);
+            m_pwm_chan4->enable();
+            break;     
+        case 5:
+            m_pwm_chan5->set_mode(mode);
+            m_pwm_chan5->enable();
+            break;                   
         default:
             return false;
     }
@@ -178,6 +192,12 @@ bool Manager::SetPWM(int channel, float signal) {
         case 3:
             m_pwm_chan3->set_pwm(signal);
             break;
+        case 4:
+            m_pwm_chan4->set_pwm(signal);
+            break;  
+        case 5:
+            m_pwm_chan5->set_pwm(signal);
+            break;                      
         default:
             break;
     }
