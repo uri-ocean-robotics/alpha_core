@@ -1,5 +1,6 @@
 Serial:
-  port: /dev/ttySC3
+  # port: /dev/ttySC3
+  port: /dev/ttyACM0
   baud: 115200
   parity: 0
   databits: 8
@@ -39,4 +40,4 @@ PWM_Control:
   pwm_chan5:
     channel: 5
     mode: thruster
-    topic: control/pwm_chan4    
+    topic: control/pwm_chan5    

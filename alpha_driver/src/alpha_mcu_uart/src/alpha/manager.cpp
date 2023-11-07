@@ -24,46 +24,116 @@
 #include "manager.h"
 
 Manager::Manager() {
-    // setup uart parameters
-    if (UART_ID == 0) {
-      m_uart_id = uart0;
+
+    // Setup UART for normal communication and debug
+    if(COMM_NORMAL_TYPE == 0) {
+        // setup uart
+        gpio_set_function(0, GPIO_FUNC_UART);
+        gpio_set_function(1, GPIO_FUNC_UART);
+        uart_init(uart0, COMM_NORMAL_BAUD);
+        uart_set_hw_flow(uart0, false, false);
+        uart_set_fifo_enabled(uart0, false);
     }
-    else if (UART_ID == 1) {
-      m_uart_id = uart1;
+    else if(COMM_NORMAL_TYPE == 1) {
+        // setup uart
+        gpio_set_function(8, GPIO_FUNC_UART);
+        gpio_set_function(9, GPIO_FUNC_UART);
+        uart_init(uart1, COMM_NORMAL_BAUD);
+        uart_set_hw_flow(uart1, false, false);
+        uart_set_fifo_enabled(uart1, false);        
     }
 
-    // setup uart
-    gpio_set_function(UART_PIN_TX, GPIO_FUNC_UART);
-    gpio_set_function(UART_PIN_RX, GPIO_FUNC_UART);
-    uart_init(m_uart_id, UART_BAUDRATE);
+    if(COMM_DEBUG_TYPE == 0) {
+        // setup uart
+        gpio_set_function(0, GPIO_FUNC_UART);
+        gpio_set_function(1, GPIO_FUNC_UART);
+        uart_init(uart0, COMM_DEBUG_BAUD);
+        uart_set_hw_flow(uart0, false, false);
+        uart_set_fifo_enabled(uart0, false);
+    }
+    else if(COMM_DEBUG_TYPE==1) {
+        // setup uart
+        gpio_set_function(8, GPIO_FUNC_UART);
+        gpio_set_function(9, GPIO_FUNC_UART);
+        uart_init(uart1, COMM_DEBUG_BAUD);
+        uart_set_hw_flow(uart1, false, false);
+        uart_set_fifo_enabled(uart1, false);
+    }
 
-    // setup devices
-    m_pwm_chan0 = new PwmController(PWM_CHANNEL_PIN_0, 0);
-    m_pwm_chan1 = new PwmController(PWM_CHANNEL_PIN_1, 1);
-    m_pwm_chan2 = new PwmController(PWM_CHANNEL_PIN_2, 2);
-    m_pwm_chan3 = new PwmController(PWM_CHANNEL_PIN_3, 3);
-    m_pwm_chan4 = new PwmController(PWM_CHANNEL_PIN_4, 4);
-    m_pwm_chan5 = new PwmController(PWM_CHANNEL_PIN_5, 5);
+    // setup PWM devices
+    m_pwm_channels.push_back(new PwmController(PWM_CHANNEL_PIN_0, 0));
+    m_pwm_channels.push_back(new PwmController(PWM_CHANNEL_PIN_1, 1));
+    m_pwm_channels.push_back(new PwmController(PWM_CHANNEL_PIN_2, 2));
+    m_pwm_channels.push_back(new PwmController(PWM_CHANNEL_PIN_3, 3));
+    m_pwm_channels.push_back(new PwmController(PWM_CHANNEL_PIN_4, 4));
+    m_pwm_channels.push_back(new PwmController(PWM_CHANNEL_PIN_5, 5));
+    for(const auto& ch : m_pwm_channels) {
+        ch->initialize();
+    }
 
-    m_pwm_chan0->initialize();
-    m_pwm_chan1->initialize();
-    m_pwm_chan2->initialize();
-    m_pwm_chan3->initialize();
-    m_pwm_chan4->initialize();
-    m_pwm_chan5->initialize();
+    // setup reporter for pwm 
+    // add_repeating_timer_ms(PWM_REPORT_PERIOD, ReportPWM, this, &m_reporter_timer);
+
 }
 
 Manager::~Manager() {
-    delete m_pwm_chan0;
-    delete m_pwm_chan1;
-    delete m_pwm_chan2;
-    delete m_pwm_chan3;
-    delete m_pwm_chan4;
-    delete m_pwm_chan5;
+    for(auto ch : m_pwm_channels) {
+        delete ch;
+    }
+
+    m_pwm_channels.clear();
 }
 
+// bool Manager::ReportPWM(struct repeating_timer *t) {
+//     auto self = (Manager*)t->user_data;
+
+//     for(const auto& ch : self->m_pwm_channels) {
+//         // skip it if the pwm controller is not enabled
+//         if(!ch->get_enable()) {
+//             continue;
+//         }
+
+//         NMEA *msg = new NMEA();
+//         msg->construct(NMEA_FORMAT_PWM_REPORT,
+//                        NMEA_PWM_REPORT,
+//                        ch->get_channel(),
+//                        ch->get_current(),
+//                        ch->get_mode(),
+//                        ch->get_enable()
+//         );        
+
+//         std::string str = msg->get_raw();
+//         self->SendMsgLine(str);
+
+//         delete msg;        
+//     }
+
+//     return true;
+// }
+// #pragma clang diagnostic pop
+
+// only receive and parse the port for the normal commm
 void Manager::ReceiveMsg() {
+    // for the uart normal comm
+    if(COMM_NORMAL_TYPE==0) {
+        m_uart_id = uart0;
+    }
+    else {
+        m_uart_id = uart1;
+    }
+
     while(true) {
+        
+        // use usb for normal commm
+        if(COMM_NORMAL_TYPE==2) {
+            std::string str;
+            std::cin >> str;
+            ParseMsg(str);
+
+            continue;
+        }
+        
+        // use uart for normal comm
         while (uart_is_readable(m_uart_id)) {
             // get each char
             uint8_t c = uart_getc(m_uart_id);
@@ -84,15 +154,11 @@ void Manager::ReceiveMsg() {
                 // delete the used msg
                 m_str_queue.pop();
             } 
-        }       
+        }             
     }
 }
 
 void Manager::ParseMsg(const std::string &str) {
-    //! DEBUG:
-    // SendMsg(str);
-    // std::cout<<str;
-
     //! TODO: send bad msg back to pi: $PCIO,str*00\r\n
 
     NMEA msg(str.c_str());
@@ -117,7 +183,7 @@ void Manager::ParseMsg(const std::string &str) {
         sscanf(msg.get_data(), "%*[^,],%d,%f", &channel, &signal);
 
         // do something
-        SetPWM(channel, signal);
+        m_pwm_channels[channel]->set_pwm(signal);
     }
     // else if (strcmp(msg.get_cmd(), NMEA_PWM_INITIALIZE) == 0) {
     //     // bad
@@ -146,99 +212,113 @@ bool Manager::SetPWMInitialized(int channel, int mode) {
                " Mode: " + std::to_string(mode);
     SendMsgLine(str);
 
-    switch (channel) {
-        case 0:
-            m_pwm_chan0->set_mode(mode);
-            m_pwm_chan0->enable();
-            break;
-        case 1:
-            m_pwm_chan1->set_mode(mode);
-            m_pwm_chan1->enable();
-            break;
-        case 2:
-            m_pwm_chan2->set_mode(mode);
-            m_pwm_chan2->enable();
-            break;
-        case 3:
-            m_pwm_chan3->set_mode(mode);
-            m_pwm_chan3->enable();
-            break;
-        case 4:
-            m_pwm_chan4->set_mode(mode);
-            m_pwm_chan4->enable();
-            break;     
-        case 5:
-            m_pwm_chan5->set_mode(mode);
-            m_pwm_chan5->enable();
-            break;                   
-        default:
-            return false;
-    }
+    m_pwm_channels[channel]->set_mode(mode);
+    m_pwm_channels[channel]->enable();
 
     return true;
 }
 
-bool Manager::SetPWM(int channel, float signal) {
-    switch (channel) {
-        case 0:
-            m_pwm_chan0->set_pwm(signal);
-            break;
-        case 1:
-            m_pwm_chan1->set_pwm(signal);
-            break;
-        case 2:
-            m_pwm_chan2->set_pwm(signal);
-            break;
-        case 3:
-            m_pwm_chan3->set_pwm(signal);
-            break;
-        case 4:
-            m_pwm_chan4->set_pwm(signal);
-            break;  
-        case 5:
-            m_pwm_chan5->set_pwm(signal);
-            break;                      
-        default:
-            break;
-    }
-    return true;
-}
-
-bool Manager::SendMsg(const std::string &str) {
+bool Manager::SendMsg(const std::string &str, bool debug) {
     bool flag = false;
 
-    if(UART_ID < 0) {
-        // use USB
-        std::cout << str;
-        flag = true;
+    if(!debug) {
+        // use the normal comm port
+        if(COMM_NORMAL_TYPE==0){
+            // use UART0
+            if(uart_is_writable(uart0)) {
+                uart_puts(uart0, str.c_str());
+                flag = true;
+            }            
+        }
+        else if(COMM_NORMAL_TYPE==1) {
+            // use UART1
+            if(uart_is_writable(uart1)) {
+                uart_puts(uart1, str.c_str());
+                flag = true;
+            }            
+        }
+        else {
+            // use USB
+            std::cout << str;
+            flag = true;            
+        }
     }
     else {
-        // use UART
-        if(uart_is_writable(m_uart_id)) {
-            uart_puts(m_uart_id, str.c_str());
-            flag = true;
+        // use the debug comm port
+        if(COMM_DEBUG_TYPE==0){
+            // use UART0
+            if(uart_is_writable(uart0)) {
+                uart_puts(uart0, str.c_str());
+                flag = true;
+            }            
         }
+        else if(COMM_DEBUG_TYPE==1) {
+            // use UART1
+            if(uart_is_writable(uart1)) {
+                uart_puts(uart1, str.c_str());
+                flag = true;
+            }            
+        }
+        else {
+            // use USB
+            std::cout << str;
+            flag = true;            
+        }        
     }
 
     return flag;
 }
 
-bool Manager::SendMsgLine(const std::string &str) {
+bool Manager::SendMsgLine(const std::string &str, bool debug) {
     bool flag = false;
 
     std::string str_line = str + "\r\n";
 
-    if(UART_ID < 0) {
-        // use USB
-        std::cout << str_line;
-        flag = true;
+
+    if(!debug) {
+        // use the normal comm port
+        if(COMM_NORMAL_TYPE==0){
+            // use UART0
+            if(uart_is_writable(uart0)) {
+                uart_puts(uart0, str_line.c_str());
+                flag = true;
+            }            
+        }
+        else if(COMM_NORMAL_TYPE==1) {
+            // use UART1
+            if(uart_is_writable(uart1)) {
+                uart_puts(uart1, str_line.c_str());
+                flag = true;
+            }            
+        }
+        else {
+            // use USB
+            std::cout << str_line;
+            flag = true;            
+        }
+
     }
     else {
-        // use UART
-        if(uart_is_writable(m_uart_id)) {
-            uart_puts(m_uart_id, str_line.c_str());
-            flag = true;
+        // use the debug comm port
+        if(COMM_DEBUG_TYPE==0){
+            // use UART0
+            if(uart_is_writable(uart0)) {
+                uart_puts(uart0, str_line.c_str());
+                flag = true;
+            }            
         }
+        else if(COMM_DEBUG_TYPE==1) {
+            // use UART1
+            if(uart_is_writable(uart1)) {
+                uart_puts(uart1, str_line.c_str());
+                flag = true;
+            }            
+        }
+        else {
+            // use USB
+            std::cout << str_line;
+            flag = true;            
+        }        
     }    
 
     return flag;

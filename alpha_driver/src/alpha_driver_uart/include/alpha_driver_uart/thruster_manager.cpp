@@ -165,7 +165,7 @@ void ThrusterManager::SafetyLoop() {
         if(dt.toSec() > system_param_.safety_timeout) {
             for(const auto& i : pwm_control_) {
                 // send stop pwm: usually take 100 microseconds 
-                SendPWM(i.second.channel, 0);
+                // SendPWM(i.second.channel, 0);
 
                 // sleep for a very short amount of time, really need this ?
                 std::this_thread::sleep_for(dura_small);

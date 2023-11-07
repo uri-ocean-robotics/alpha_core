@@ -50,17 +50,8 @@ private:
     /** 
      * PWM devices
     */
-    PwmController* m_pwm_chan0;
 
-    PwmController* m_pwm_chan1;
-
-    PwmController* m_pwm_chan2;
-
-    PwmController* m_pwm_chan3;
-
-    PwmController* m_pwm_chan4;
-
-    PwmController* m_pwm_chan5;
+    std::vector<PwmController*> m_pwm_channels;
 
     /**
      * UART related
@@ -73,18 +64,24 @@ private:
     std::queue<std::string> m_str_queue;
 
     /**
+     * timer related
+    */
+
+    // struct repeating_timer m_reporter_timer;
+    
+    /**
      * Parse related
     */
 
     void ParseMsg(const std::string &str);
 
-    bool SendMsg(const std::string &str);
+    bool SendMsg(const std::string &str, bool debug = false);
 
-    bool SendMsgLine(const std::string &str);
+    bool SendMsgLine(const std::string &str, bool debug = false);
 
     bool SetPWMInitialized(int channel, int mode);
 
-    bool SetPWM(int channel, float signal);
+    // static bool ReportPWM(struct repeating_timer *t);
 
 public:
 

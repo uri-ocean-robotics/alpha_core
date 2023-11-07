@@ -86,7 +86,7 @@ private:
 
     void f_change_magnitude_limited(float magnitude);
 
-    void f_send(const std::string &str);
+    void f_send(const std::string &str, bool debug=false);
 
 public:
 
@@ -102,7 +102,13 @@ public:
 
     void set_mode(int mode);
 
+    int get_channel();
 
+    float get_current();
+
+    int get_mode();
+
+    bool get_enable();
 };
 
 #endif //ALPHA_MCU_PWM_CONTROLLER_H
