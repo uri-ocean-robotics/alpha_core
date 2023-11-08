@@ -50,8 +50,6 @@ PwmController::PwmController(int pin, int channel, int mode) {
 void PwmController::initialize() {
 
     // setup timer
-    add_repeating_timer_ms(PWM_REPORT_PERIOD, f_reporter, this, &m_reporter_timer);
-
     add_repeating_timer_ms(m_limiter_period, f_limiter, this, &m_limiter_timer);
 
     gpio_set_function(m_pin, GPIO_FUNC_PWM);
@@ -74,32 +72,6 @@ void PwmController::initialize() {
 
     enable();
 }
-
-bool PwmController::f_reporter(struct repeating_timer *t) {
-
-    auto self = (PwmController *) t->user_data;
-
-    if(!self->m_is_enabled) {
-        return true;
-    }
-
-    NMEA *msg = new NMEA();
-    msg->construct(NMEA_FORMAT_PWM_REPORT,
-                   NMEA_PWM_REPORT,
-                   self->m_channel,
-                   self->m_current,
-                   self->m_mode,
-                   self->m_is_enabled
-    );
-
-    std::string str = msg->get_raw();
-    self->f_send(str);
-
-    delete msg;
-
-    return true;
-}
-#pragma clang diagnostic pop
 
 void PwmController::set_pwm(float signal) {
 
@@ -144,8 +116,6 @@ void PwmController::f_change_magnitude(float magnitude) {
 
 void PwmController::f_change_magnitude_limited(float magnitude) {
     m_desired = magnitude;
-    //! DEBUG:
-    f_send("ch: " + std::to_string(m_channel) + ", design= " + std::to_string(m_desired));
 }
 
 bool PwmController::f_limiter(struct repeating_timer *t) {
@@ -178,7 +148,7 @@ bool PwmController::f_limiter(struct repeating_timer *t) {
 
 void PwmController::enable() {
 
-    sleep_ms(100);
+    sleep_ms(1000);
 
     m_is_enabled = true;
 
@@ -209,6 +179,11 @@ bool PwmController::f_safety_checker(struct repeating_timer *t) {
 
     if(absolute_time_diff_us(self->m_last_comm, get_absolute_time()) > 2999999) {
         self->set_pwm(0);
+        // //! DEBUG:
+        // self->f_send("ch: " + 
+        //         std::to_string(self->m_channel) + 
+        //         ", diff= " + 
+        //         std::to_string(absolute_time_diff_us(self->m_last_comm, get_absolute_time())));
     }
 
     return true;
@@ -235,7 +210,6 @@ void PwmController::f_send(const std::string &str, bool debug) {
             // use USB
             std::cout << str_line;
         }
-
     }
     else {
         // use the debug comm port

@@ -77,6 +77,7 @@ Manager::Manager() {
 }
 
 Manager::~Manager() {
+
     for(auto ch : m_pwm_channels) {
         delete ch;
     }
@@ -110,7 +111,6 @@ Manager::~Manager() {
 
 //     return true;
 // }
-// #pragma clang diagnostic pop
 
 // only receive and parse the port for the normal commm
 void Manager::ReceiveMsg() {
@@ -183,6 +183,7 @@ void Manager::ParseMsg(const std::string &str) {
         sscanf(msg.get_data(), "%*[^,],%d,%f", &channel, &signal);
 
         // do something
+        // SetPWM(channel,signal);
         m_pwm_channels[channel]->set_pwm(signal);
     }
     // else if (strcmp(msg.get_cmd(), NMEA_PWM_INITIALIZE) == 0) {

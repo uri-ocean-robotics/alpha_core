@@ -68,14 +68,13 @@ private:
 
     struct repeating_timer m_safety_checker_timer;
 
-    struct repeating_timer m_reporter_timer;
-
     struct repeating_timer m_limiter_timer;
 
     uart_inst_t* m_uart_id;
 
     void f_change_pulse(uint16_t pulse);
 
+    // send stop PWM if there is no cmd after 3 second (such as comm is lost)
     static bool f_safety_checker(struct repeating_timer *t);
 
     static bool f_reporter(struct repeating_timer *t);
