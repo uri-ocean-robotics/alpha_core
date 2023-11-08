@@ -66,7 +66,7 @@ private:
 
     const uint16_t m_limiter_period = 4; // ms
 
-    struct repeating_timer m_safety_checker_timer;
+    // struct repeating_timer m_safety_checker_timer;
 
     struct repeating_timer m_limiter_timer;
 
@@ -75,7 +75,7 @@ private:
     void f_change_pulse(uint16_t pulse);
 
     // send stop PWM if there is no cmd after 3 second (such as comm is lost)
-    static bool f_safety_checker(struct repeating_timer *t);
+    // static bool f_safety_checker(struct repeating_timer *t);
 
     static bool f_reporter(struct repeating_timer *t);
 
@@ -98,6 +98,9 @@ public:
     void enable();
 
     void disable();
+
+    // get the the time duration since last communication (e.g., pwm command)
+    int64_t get_comm_duration();
 
     void set_mode(int mode);
 

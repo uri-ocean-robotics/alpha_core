@@ -71,9 +71,12 @@ Manager::Manager() {
         ch->initialize();
     }
 
-    // setup reporter for pwm 
-    // add_repeating_timer_ms(PWM_REPORT_PERIOD, ReportPWM, this, &m_reporter_timer);
+    // setup timer for PWM status report
+    // add_repeating_timer_ms(PERIOD_PWM_REPORT, ReportPWM, this, &m_reporter_timer);
 
+    // setup timer for safety check: in case the communication is lost
+    add_repeating_timer_ms(PERIOD_SAFETY_CHECK, CheckSafety, this, &m_safety_timer);
+    sleep_ms(1000);
 }
 
 Manager::~Manager() {
@@ -107,10 +110,30 @@ Manager::~Manager() {
 //         self->SendMsgLine(str);
 
 //         delete msg;        
+
+//         // ==================  check safety ====================== //
+//         // auto ch_duration = ch->get_comm_duration();
+//         // self->SendMsgLine("ch: " + std::to_string(ch->get_current()) + ", "+ std::to_string(ch_duration));
 //     }
 
 //     return true;
 // }
+
+bool Manager::CheckSafety(struct repeating_timer *t) {
+    auto self = (Manager*)t->user_data;
+
+    for(const auto& ch : self->m_pwm_channels) {
+        auto ch_duration = ch->get_comm_duration();
+
+        self->SendMsgLine("ch: " + std::to_string(ch->get_channel()) + ", "+ std::to_string(ch_duration));
+
+        if( ch_duration > SAFETY_DURATION) {
+            ch->set_pwm(0);  
+        }
+    }
+
+    return true;
+}
 
 // only receive and parse the port for the normal commm
 void Manager::ReceiveMsg() {

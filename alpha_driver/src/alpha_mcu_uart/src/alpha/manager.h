@@ -68,6 +68,8 @@ private:
     */
 
     // struct repeating_timer m_reporter_timer;
+
+    struct repeating_timer m_safety_timer;
     
     /**
      * Parse related
@@ -82,6 +84,8 @@ private:
     bool SetPWMInitialized(int channel, int mode);
 
     // static bool ReportPWM(struct repeating_timer *t);
+
+    static bool CheckSafety(struct repeating_timer *t);
 
 public:
 

@@ -158,7 +158,7 @@ void PwmController::enable() {
 
     pwm_set_enabled(m_slice_num, true);
 
-    add_repeating_timer_ms(100, f_safety_checker, this, &m_safety_checker_timer);
+    // add_repeating_timer_ms(100, f_safety_checker, this, &m_safety_checker_timer);
 }
 
 void PwmController::disable() {
@@ -170,23 +170,35 @@ void PwmController::set_mode(int mode) {
     m_mode = mode;
 }
 
-bool PwmController::f_safety_checker(struct repeating_timer *t) {
-    auto self = (PwmController*)t->user_data;
+// bool PwmController::f_safety_checker(struct repeating_timer *t) {
+//     auto self = (PwmController*)t->user_data;
 
-    if(is_nil_time(self->m_last_comm)) {
-        return true;
+//     if(is_nil_time(self->m_last_comm)) {
+//         return true;
+//     }
+
+    // if(absolute_time_diff_us(self->m_last_comm, get_absolute_time()) > 2999999) {
+//         self->set_pwm(0);
+//         // //! DEBUG:
+//         // self->f_send("ch: " + 
+//         //         std::to_string(self->m_channel) + 
+//         //         ", diff= " + 
+//         //         std::to_string(absolute_time_diff_us(self->m_last_comm, get_absolute_time())));
+//     }
+
+//     return true;
+// }
+
+int64_t PwmController::get_comm_duration() {
+    // Determine if the given timestamp is nil
+    if(is_nil_time(m_last_comm)) {
+        return 0;
     }
 
-    if(absolute_time_diff_us(self->m_last_comm, get_absolute_time()) > 2999999) {
-        self->set_pwm(0);
-        // //! DEBUG:
-        // self->f_send("ch: " + 
-        //         std::to_string(self->m_channel) + 
-        //         ", diff= " + 
-        //         std::to_string(absolute_time_diff_us(self->m_last_comm, get_absolute_time())));
-    }
-
-    return true;
+    // check the duration since last pwm command
+    // return absolute_time_diff_us(m_last_comm, get_absolute_time());
+    return m_last_comm;
+    // return get_absolute_time();
 }
 
 void PwmController::f_send(const std::string &str, bool debug) {
