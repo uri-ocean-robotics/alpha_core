@@ -24,22 +24,20 @@
 #ifndef ALPHA_PARAMETERS_H
 #define ALPHA_PARAMETERS_H
 
-// UART Main Communication
-// #define UART_ID 0
-// #define UART_PIN_TX 0
-// #define UART_PIN_RX 1
-// #define UART_BAUDRATE 115200
-// #define UART_ID 1
-// #define UART_PIN_TX 8
-// #define UART_PIN_RX 9
-// #define UART_BAUDRATE 115200
-
 //// Communication setup
-// Type: 0: uart0; 1: uart1; 2: usb
+//// Type: 0: uart0; 1: uart1; 2: usb
+
+//// USB as the main commmunication
 #define COMM_NORMAL_TYPE 2
 #define COMM_NORMAL_BAUD 115200
 #define COMM_DEBUG_TYPE 0
 #define COMM_DEBUG_BAUD 115200
+
+//// uart0 as the main communication, usb as the debug
+// #define COMM_NORMAL_TYPE 0
+// #define COMM_NORMAL_BAUD 115200
+// #define COMM_DEBUG_TYPE 2
+// #define COMM_DEBUG_BAUD 115200
 
 // PWM
 #define PWM_CHANNEL_PIN_0 24
@@ -58,6 +56,7 @@
 
 #define SAFETY_DURATION 2999999
 
+#define DEBUG
 
 // #define REPORT_BAROMETER_PERIOD 200
 

@@ -110,6 +110,10 @@ bool Manager::ReportPWM(struct repeating_timer *t) {
         std::string str = msg->get_raw();
         self->SendMsgLine(str);
 
+        #ifdef DEBUG   
+            self->SendMsgLine(str,true);
+        #endif
+
         delete msg;        
     }
 
@@ -148,7 +152,7 @@ void Manager::ReceiveMsg() {
     if(COMM_NORMAL_TYPE==0) {
         m_uart_id = uart0;
     }
-    else {
+    else if (COMM_NORMAL_TYPE==1){
         m_uart_id = uart1;
     }
 
