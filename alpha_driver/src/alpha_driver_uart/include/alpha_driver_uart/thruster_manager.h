@@ -60,8 +60,6 @@ private:
         std::string topic;
     } pwm_control_t;
 
-    // std::vector<pwm_control_t> pwm_control_;
-
     std::map<std::string, pwm_control_t> pwm_control_;
 
     ros::Time last_pwm_time_;

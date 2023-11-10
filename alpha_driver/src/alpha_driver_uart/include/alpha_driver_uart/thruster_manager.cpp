@@ -114,11 +114,10 @@ void ThrusterManager::LoadConfigure() {
 
 void ThrusterManager::Initialize() {
 
-    //! NOTE: each pico pwm device has it's own saftey check timer, 
-    //        do we really need this one ?????
-    // start a safety loop to monitor latest thruster pwm commands
-    std::thread t(std::bind(&ThrusterManager::SafetyLoop, this));
-    t.detach();
+    //! NOTE: not use this for now since pico side has a timer to monitor this condition
+    // // start a safety loop to monitor latest thruster pwm commands
+    // std::thread t(std::bind(&ThrusterManager::SafetyLoop, this));
+    // t.detach();
 }
 
 void ThrusterManager::SetupROS() {
@@ -165,7 +164,7 @@ void ThrusterManager::SafetyLoop() {
         if(dt.toSec() > system_param_.safety_timeout) {
             for(const auto& i : pwm_control_) {
                 // send stop pwm: usually take 100 microseconds 
-                // SendPWM(i.second.channel, 0);
+                SendPWM(i.second.channel, 0);
 
                 // sleep for a very short amount of time, really need this ?
                 std::this_thread::sleep_for(dura_small);
