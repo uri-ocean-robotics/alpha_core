@@ -114,11 +114,10 @@ void ThrusterManager::LoadConfigure() {
 
 void ThrusterManager::Initialize() {
 
-    //! NOTE: each pico pwm device has it's own saftey check timer, 
-    //        do we really need this one ?????
-    // start a safety loop to monitor latest thruster pwm commands
-    std::thread t(std::bind(&ThrusterManager::SafetyLoop, this));
-    t.detach();
+    //! NOTE: not use this for now since pico side has a timer to monitor this condition
+    // // start a safety loop to monitor latest thruster pwm commands
+    // std::thread t(std::bind(&ThrusterManager::SafetyLoop, this));
+    // t.detach();
 }
 
 void ThrusterManager::SetupROS() {

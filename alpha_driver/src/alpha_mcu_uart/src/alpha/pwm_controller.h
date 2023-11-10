@@ -66,17 +66,13 @@ private:
 
     const uint16_t m_limiter_period = 4; // ms
 
-    struct repeating_timer m_safety_checker_timer;
-
-    struct repeating_timer m_reporter_timer;
+    // struct repeating_timer m_safety_checker_timer;
 
     struct repeating_timer m_limiter_timer;
 
     uart_inst_t* m_uart_id;
 
     void f_change_pulse(uint16_t pulse);
-
-    static bool f_safety_checker(struct repeating_timer *t);
 
     static bool f_reporter(struct repeating_timer *t);
 
@@ -86,7 +82,7 @@ private:
 
     void f_change_magnitude_limited(float magnitude);
 
-    void f_send(const std::string &str);
+    void f_send(const std::string &str, bool debug=false);
 
 public:
 
@@ -100,9 +96,18 @@ public:
 
     void disable();
 
+    // get the the time duration since last communication (e.g., pwm command)
+    int64_t get_comm_duration();
+
     void set_mode(int mode);
 
+    int get_channel();
 
+    float get_current();
+
+    int get_mode();
+
+    bool get_enable();
 };
 
 #endif //ALPHA_MCU_PWM_CONTROLLER_H

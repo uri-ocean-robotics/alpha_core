@@ -44,22 +44,14 @@ PwmController::PwmController(int pin, int channel, int mode) {
 
     m_desired = 0;
 
-    m_is_enabled = false;
+    m_is_enabled = false;  
 
-    // setup main communication
-    if (UART_ID == 0) {
-      m_uart_id = uart0;
-    }
-    else if (UART_ID == 1) {
-      m_uart_id = uart1;
-    }    
+    m_last_comm = get_absolute_time();
 }
 
 void PwmController::initialize() {
 
     // setup timer
-    add_repeating_timer_ms(PWM_REPORT_PERIOD, f_reporter, this, &m_reporter_timer);
-
     add_repeating_timer_ms(m_limiter_period, f_limiter, this, &m_limiter_timer);
 
     gpio_set_function(m_pin, GPIO_FUNC_PWM);
@@ -82,35 +74,6 @@ void PwmController::initialize() {
 
     enable();
 }
-
-bool PwmController::f_reporter(struct repeating_timer *t) {
-
-    auto self = (PwmController *) t->user_data;
-
-    if(!self->m_is_enabled) {
-        return true;
-    }
-
-    NMEA *msg = new NMEA();
-    msg->construct(NMEA_FORMAT_PWM_REPORT,
-                   NMEA_PWM_REPORT,
-                   self->m_channel,
-                   self->m_current,
-                   self->m_mode,
-                   self->m_is_enabled
-    );
-
-    std::string str = msg->get_raw();
-    self->f_send(str);
-
-    //! DEBUG:
-    std::cout<<str<<std::endl;
-
-    delete msg;
-
-    return true;
-}
-#pragma clang diagnostic pop
 
 void PwmController::set_pwm(float signal) {
 
@@ -187,7 +150,7 @@ bool PwmController::f_limiter(struct repeating_timer *t) {
 
 void PwmController::enable() {
 
-    sleep_ms(1);
+    sleep_ms(1000);
 
     m_is_enabled = true;
 
@@ -197,7 +160,6 @@ void PwmController::enable() {
 
     pwm_set_enabled(m_slice_num, true);
 
-    add_repeating_timer_ms(100, f_safety_checker, this, &m_safety_checker_timer);
 }
 
 void PwmController::disable() {
@@ -209,32 +171,71 @@ void PwmController::set_mode(int mode) {
     m_mode = mode;
 }
 
-bool PwmController::f_safety_checker(struct repeating_timer *t) {
-    auto self = (PwmController*)t->user_data;
-
-    if(is_nil_time(self->m_last_comm)) {
-        return true;
+int64_t PwmController::get_comm_duration() {
+    // Determine if the given timestamp is nil
+    if(is_nil_time(m_last_comm)) {
+        return 0;
     }
 
-    if(absolute_time_diff_us(self->m_last_comm, get_absolute_time()) > 2999999) {
-        self->set_pwm(0);
-    }
-
-    return true;
+    // check the duration since last pwm command
+    return absolute_time_diff_us(m_last_comm, get_absolute_time());
 }
 
-void PwmController::f_send(const std::string &str) {
-    std::string str_out = str + "\r\n";
+void PwmController::f_send(const std::string &str, bool debug) {
+    std::string str_line = str + "\r\n";
 
-    if(UART_ID < 0) {
-        // use USB
-        std::cout << str_out;
-    }
-    else {
-        // use UART
-        if(uart_is_writable(m_uart_id)) {
-            uart_puts(m_uart_id, str_out.c_str());
+    if(!debug) {
+        // use the normal comm port
+        if(COMM_NORMAL_TYPE==0){
+            // use UART0
+            if(uart_is_writable(uart0)) {
+                uart_puts(uart0, str_line.c_str());
+            }            
+        }
+        else if(COMM_NORMAL_TYPE==1) {
+            // use UART1
+            if(uart_is_writable(uart1)) {
+                uart_puts(uart1, str_line.c_str());
+            }            
+        }
+        else {
+            // use USB
+            std::cout << str_line;
         }
     }
+    else {
+        // use the debug comm port
+        if(COMM_DEBUG_TYPE==0){
+            // use UART0
+            if(uart_is_writable(uart0)) {
+                uart_puts(uart0, str_line.c_str());
+            }            
+        }
+        else if(COMM_DEBUG_TYPE==1) {
+            // use UART1
+            if(uart_is_writable(uart1)) {
+                uart_puts(uart1, str_line.c_str());
+            }            
+        }
+        else {
+            // use USB
+            std::cout << str_line;
+        }        
+    }
+}
 
+int PwmController::get_channel() {
+    return m_channel;
+}
+
+float PwmController::get_current() {
+    return m_current;
+}
+
+int PwmController::get_mode() {
+    return m_mode;
+}
+
+bool PwmController::get_enable() {
+    return m_is_enabled;
 }
