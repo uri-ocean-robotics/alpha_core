@@ -74,9 +74,6 @@ private:
 
     void f_change_pulse(uint16_t pulse);
 
-    // send stop PWM if there is no cmd after 3 second (such as comm is lost)
-    // static bool f_safety_checker(struct repeating_timer *t);
-
     static bool f_reporter(struct repeating_timer *t);
 
     static bool f_limiter(struct repeating_timer *t);

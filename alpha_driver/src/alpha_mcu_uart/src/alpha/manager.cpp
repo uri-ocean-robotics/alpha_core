@@ -72,11 +72,12 @@ Manager::Manager() {
     }
 
     // setup timer for PWM status report
-    // add_repeating_timer_ms(PERIOD_PWM_REPORT, ReportPWM, this, &m_reporter_timer);
+    add_repeating_timer_ms(PERIOD_PWM_REPORT, ReportPWM, this, &m_reporter_timer);
+
+    sleep_ms(1000);
 
     // setup timer for safety check: in case the communication is lost
     add_repeating_timer_ms(PERIOD_SAFETY_CHECK, CheckSafety, this, &m_safety_timer);
-    sleep_ms(1000);
 }
 
 Manager::~Manager() {
@@ -88,46 +89,52 @@ Manager::~Manager() {
     m_pwm_channels.clear();
 }
 
-// bool Manager::ReportPWM(struct repeating_timer *t) {
-//     auto self = (Manager*)t->user_data;
+bool Manager::ReportPWM(struct repeating_timer *t) {
+    auto self = (Manager*)t->user_data;
 
-//     for(const auto& ch : self->m_pwm_channels) {
-//         // skip it if the pwm controller is not enabled
-//         if(!ch->get_enable()) {
-//             continue;
-//         }
+    for(const auto& ch : self->m_pwm_channels) {
+        // skip it if the pwm controller is not enabled
+        if(!ch->get_enable()) {
+            continue;
+        }
 
-//         NMEA *msg = new NMEA();
-//         msg->construct(NMEA_FORMAT_PWM_REPORT,
-//                        NMEA_PWM_REPORT,
-//                        ch->get_channel(),
-//                        ch->get_current(),
-//                        ch->get_mode(),
-//                        ch->get_enable()
-//         );        
+        NMEA *msg = new NMEA();
+        msg->construct(NMEA_FORMAT_PWM_REPORT,
+                       NMEA_PWM_REPORT,
+                       ch->get_channel(),
+                       ch->get_current(),
+                       ch->get_mode(),
+                       ch->get_enable()
+        );        
 
-//         std::string str = msg->get_raw();
-//         self->SendMsgLine(str);
+        std::string str = msg->get_raw();
+        self->SendMsgLine(str);
 
-//         delete msg;        
+        delete msg;        
+    }
 
-//         // ==================  check safety ====================== //
-//         // auto ch_duration = ch->get_comm_duration();
-//         // self->SendMsgLine("ch: " + std::to_string(ch->get_current()) + ", "+ std::to_string(ch_duration));
-//     }
-
-//     return true;
-// }
+    return true;
+}
 
 bool Manager::CheckSafety(struct repeating_timer *t) {
     auto self = (Manager*)t->user_data;
 
+    int no_commm_count = 0;
+
+    // check how many PWM controllers not receiveing any commands for a duration
     for(const auto& ch : self->m_pwm_channels) {
         auto ch_duration = ch->get_comm_duration();
 
-        self->SendMsgLine("ch: " + std::to_string(ch->get_channel()) + ", "+ std::to_string(ch_duration));
-
         if( ch_duration > SAFETY_DURATION) {
+            no_commm_count ++;
+        }
+    }
+
+    // if all the controllers not not receiveing so stop them in case
+    if(no_commm_count == self->m_pwm_channels.size()) {
+        // self->SendMsgLine("All the thruster not received cmd");
+
+        for(const auto& ch : self->m_pwm_channels) {
             ch->set_pwm(0);  
         }
     }
