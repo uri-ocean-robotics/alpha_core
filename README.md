@@ -1,6 +1,6 @@
 # Alpha Core AUV
 
-This repository contains source codes for ALPHA AUV family.
+This repository contains source codes for ALPHA AUV (the pico code is different).
 
 ALPHA Science AUV
 ![alpha sci picture](docs/images/alpha_sci.png)
