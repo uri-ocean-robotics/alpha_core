@@ -41,10 +41,10 @@ jobs:
           repository: uri-ocean-robotics/mvp_msgs
           ref: noetic-devel
 
-      - uses: ros-tooling/setup-ros@v0.2
+      - uses: ros-tooling/setup-ros@v0.7
         with:
           required-ros-distributions: noetic
-
+          
       - name: Install required packages
         env:
           REPO_NAME: ${{ github.event.repository.name }}
