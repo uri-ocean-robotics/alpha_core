@@ -18,3 +18,7 @@
 	path = external/power_monitor
 	url = https://github.com/GSO-soslab/power_monitor
 	branch = main
+[submodule "external/g3log_ros"]
+	path = external/g3log_ros
+	url = https://gitlab.com/apl-ocean-engineering/g3log_ros
+	branch = main
