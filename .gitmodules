@@ -22,3 +22,7 @@
 	path = external/g3log_ros
 	url = https://gitlab.com/apl-ocean-engineering/g3log_ros
 	branch = main
+[submodule "external/liboculus"]
+	path = external/liboculus
+	url = https://github.com/GSO-soslab/liboculus
+	branch = main
