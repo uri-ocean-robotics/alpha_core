@@ -18,14 +18,6 @@
 	path = external/power_monitor
 	url = https://github.com/GSO-soslab/power_monitor
 	branch = main
-[submodule "external/g3log_ros"]
-	path = external/g3log_ros
-	url = https://gitlab.com/apl-ocean-engineering/g3log_ros
-	branch = main
-[submodule "external/liboculus"]
-	path = external/liboculus
-	url = https://github.com/GSO-soslab/liboculus
-	branch = main
 [submodule "external/blueprint_oculus_sonar"]
 	path = external/blueprint_oculus_sonar
 	url = https://github.com/GSO-soslab/blueprint_oculus_sonar
