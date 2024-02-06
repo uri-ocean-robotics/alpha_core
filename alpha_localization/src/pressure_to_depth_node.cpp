@@ -44,10 +44,10 @@ PressureToDepthNode::PressureToDepthNode()
 void PressureToDepthNode::f_pressure_callback(
     const sensor_msgs::FluidPressureConstPtr &msg)
 {
-
+    
+    //! NOTE: substract the standard atmospheric pressure (101325 Pa)
     mvp_msgs::Float64Stamped depth;
-
-    depth.data = msg->fluid_pressure / (m_fluid_density * 9.81);
+    depth.data = (msg->fluid_pressure - 101325) / (m_fluid_density * 9.81);
     depth.header.frame_id = m_frame_id;
     depth.header.stamp = ros::Time::now();
 
