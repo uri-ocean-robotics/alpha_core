@@ -1,0 +1,6 @@
+p1_device_names: DVL & Ping360 & LUMA
+p2_device_names: Evologics & FLS
+p3_device_names: Lighting
+p1_gpio: 9
+p2_gpio: 12
+p3_gpio: 13

@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>alpha_power_manager</name>
+  <version>0.0.0</version>
+  <description>The alpha_power_manager package</description>
+
+  <author email="mzhou@uri.edu">Mingxi Zhou</author>
+  <maintainer email="mzhou@uri.edu">Mingxi Zhou</maintainer>
+
+  <license>GPLv3</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>std_srvs</depend>
+  <depend>roscpp</depend>
+  <depend>std_msgs</depend>
+  
+
+</package>
