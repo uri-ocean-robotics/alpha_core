@@ -1,6 +1,3 @@
-p1_device_names: DVL & Ping360 & LUMA
-p2_device_names: Evologics & FLS
-p3_device_names: Lighting
-p1_gpio: 9
-p2_gpio: 12
-p3_gpio: 13
+device_name: [DVL & Ping360 & LUMA, Evologics & FLS, Lighting]
+gpio_name: [9, 12, 13]
+# gpio_count: 3

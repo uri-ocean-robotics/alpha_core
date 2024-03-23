@@ -8,9 +8,13 @@ To control the Power source on the power distribution board.
 #pragma once
 
 #include "ros/ros.h"
+#include "std_msgs/String.h"
 #include "std_srvs/SetBool.h"
 #include "std_srvs/Trigger.h"
 #include "memory"
+#include <string>
+#include <vector>
+#include <functional>
 
 
 class PowerManager
@@ -20,7 +24,7 @@ class PowerManager
         ros::NodeHandlePtr m_pnh;
 
         std::vector<std::string> m_device_name;
-        std::vector<std::string> m_gpio_name;
+        std::vector<int> m_gpio_name;
         int m_gpio_count;
 
         struct gpio_t
@@ -29,7 +33,7 @@ class PowerManager
             std::string gpio_name;
             std::string service_name; 
             ros::ServiceServer m_set_gpio;
-        }
+        };
         std::vector<gpio_t> gpio_vector;
 
         ros::ServiceServer m_get_p_state;
@@ -39,8 +43,9 @@ class PowerManager
 
         bool f_cb_srv_get_state(std_srvs::Trigger::Request &req,
                            std_srvs::Trigger::Response &res);
+        bool f_set_gpio_value(std::string value, std::string gpio_name);
+        bool f_initialize_gpio();
 
-        void initialize_gpio();
     public:
         PowerManager();
 };
