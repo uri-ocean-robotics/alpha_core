@@ -15,29 +15,36 @@ PowerManager::PowerManager()
     m_nh.reset(new ros::NodeHandle(""));
     m_pnh.reset(new ros::NodeHandle("~"));
 
-    m_pnh->param<std::string>("p1_device_names", m_p1_device_name, "");
-    m_pnh->param<std::string>("p2_device_names", m_p2_device_name, "");
-    m_pnh->param<std::string>("p3_device_names", m_p3_device_name, "");
-    m_pnh->param<std::string>("p1_gpio", m_p1_io, "9");
-    m_pnh->param<std::string>("p2_gpio", m_p2_io, "12");
-    m_pnh->param<std::string>("p3_gpio", m_p3_io, "13");
+    m_pnh->param<std::vector<std::string>>("device_name", m_device_name, "");
+    m_pnh->param<std::vector<std::string>>("gpio_name", m_gpio_name, "9");
+    m_pnh->param<int>("gpio_count", m_gpio_count, 5);
 
 
-    m_set_p1 = m_nh->advertiseService<std_srvs::SetBool::Request, std_srvs::SetBool::Response>
-    (
-        "set_port1_power",
-        std::bind(
-            &PowerManager::f_cb_srv_set_p1,
-            this,
-            std::placeholders::_1,
-            std::placeholders::_2
-        )
-    );
+    // m_serial0_sub = m_nh.subscribe<std_msgs::String>("serial/0/in", 100, std::bind(&AlphaDriverRos::f_serial_callback, this, std::placeholders::_1, 0));
 
+    for (int i = 0; i <m_gpio_count; i++)
+    {
+        thruster_t g;
+        g.device_name = m_device_name[i];
+        g.gpio_name = m_gpio_name[i];
+        g.service_name = "set_power_" + g.device_name;
+        g.m_set_gpio = m_nh->adverseService<std_srvs::SetBool::Request, std_srvs::SetBool::Response>
+                (
+                    g.service_name, 
+                    std::bind(
+                        &PowerManager::f_cb_srv_set_power,
+                        this,
+                        std::placeholders::_1,
+                        std::placeholders::_2,
+                        g.gpio_name
+                    )
+                );
+        gpio_vector.push_back(g);
+    }
 
     m_get_p_state = m_nh->advertiseService<std_srvs::Trigger::Request, std_srvs::Trigger::Response>
     (
-        "get_power_port_status",
+        "get_power_status",
         std::bind(
             &PowerManager::f_cb_srv_get_state,
             this,
@@ -46,56 +53,92 @@ PowerManager::PowerManager()
         )
     );
 
-    // system("dir");
-    // //enable GPIO, set direct, set value to 0 initially//
-    std::string cmd;
-    struct stat sb;
-    cmd = "/sys/class/gpio/gpio" + m_p1_io;
-    if( stat(cmd.c_str(), &sb) != 0 )
-    {
-        cmd = "echo " + m_p1_io + " > /sys/class/gpio/export";
-        system(cmd.c_str());
-    }
-    // cmd = "echo " + m_p2_io + " > /sys/class/gpio/export";
-    // system(cmd.c_str());
-    // cmd = "echo " + m_p3_io + " > /sys/class/gpio/export";
-    // system(cmd.c_str());
-    
-    cmd = "echo out > /sys/class/gpio/gpio" + m_p1_io + "/direction";
-    printf("cmd = %s\r\n", cmd.c_str());
-    system(cmd.c_str());
-    // cmd = "echo out > /sys/class/gpio/gpio" + m_p2_io + "/direction";
-    // system(cmd.c_str());
-    // cmd = "echo out > /sys/class/gpio/gpio" + m_p3_io + "/direction";
-    // system(cmd.c_str());
-
-    cmd = "echo 0 > /sys/class/gpio/gpio" + m_p1_io + "/value";    
-    printf("cmd = %s\r\n", cmd.c_str());
-    system(cmd.c_str());
-    // cmd = "echo 0 > /sys/class/gpio/gpio" + m_p2_io + "/value";    
-    // system(cmd.c_str());
-    // cmd = "echo 0 > /sys/class/gpio/gpio" + m_p3_io + "/value";    
-    // system(cmd.c_str());
 }
 
-bool PowerManager::f_cb_srv_set_p1(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res) 
+bool PowerManager::f_initialize_gpio()
+{
+    std::string m_dir;
+    int fd;
+
+    //export gpios
+    m_dir = "/sys/class/gpio/export"
+    fd = open(m_dir, O_WRONLY);
+    if (fd == -1) {
+        perror("Unable to open /sys/class/gpio/export");
+        return false;
+    }
+    close(fd);
+
+    for (int i=0; i<m_gpio_count; i++)
+    {
+        fd = open(m_dir, O_WRONLY);
+        //enable gpio
+        if (write(fd, gpio_vector.gpio_name[i], gpio_vector.gpio_name[i].size()) 
+                != gpio_vector.gpio_name[i].size()) 
+        {
+            perror("Error writing to /sys/class/gpio/export, gpio %s", gpio_vector.gpio_name[i].c_str());
+            return false
+        }
+        close(fd);
+
+        //set direction
+        m_dir = "/sys/class/gpio/gpio" + gpio_vector.gpio_name[i] + "/direction";
+        fd = open(m_dir, O_WRONLY);
+
+        if (fd == -1) 
+        {
+            perror("Unable to open %s", m_dir.c_str());
+        return false;
+        }
+
+        if (write(fd, "out", 3) != 3) {
+            perror("Error writing to %s", m_dir.c_str());
+            return false;
+        }
+        close(fd);
+
+        //set the value to 0
+        f_set_gpio_value("0", gpio_vector.gpio_name[i]);
+    }
+
+}
+
+bool PowerManager::f_set_gpio_value(std::string value, std::string gpio_name)
+{
+    std::string m_dir;
+    int fd;
+
+    m_dir = "/sys/class/gpio/gpio"+ gpio_name + "/value";
+    fd = open(m_dir, O_WRONLY);
+
+    if (fd == -1) {
+        perror("Unable to open %s", m_dir.c_str());
+        return false
+    }
+    if (write(fd, value , value.size()) != 1) {
+        perror("Error settting value to %s", m_dir.c_str());
+        return false;
+    }
+    close(fd);
+
+}
+
+bool PowerManager::f_cb_srv_set_power(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res, std::string gpio_name) 
 {
 
     std::string cmd;
     if(req.data)
     {
-        cmd = "echo 1 > /sys/class/gpio/gpio" + m_p1_io + "/value"; 
-        system(cmd.c_str());
+        f_set_gpio_value("0", gpio_name);
         res.success = 1;
-        printf("Port 1 power enabled\r\n");
+        res.message = "Port 1 power enabled\r\n";
         return true;
     }
     else
     {
-        cmd = "echo 0 > /sys/class/gpio/gpio" + m_p1_io + "/value"; 
-        system(cmd.c_str());
+        f_set_gpio_value("1", gpio_name);
         res.success = 1;
-        printf("Port 1 power disabled\r\n");
+        res.message = "Port 1 power disabled\r\n";
         return true;
     }
     return true;
@@ -106,24 +149,22 @@ bool PowerManager::f_cb_srv_get_state(
                         std_srvs::Trigger::Request &req,
                         std_srvs::Trigger::Response &res)
 {
-    // char v[3];
-    // std::string msg;
-    // std::string cmd;
-    // cmd = "cat /sys/class/gpio/gpio" + m_p1_io + "/value";
-    // v[0] = system(cmd.c_str());
-    // cmd = "cat /sys/class/gpio/gpio" + m_p2_io + "/value";
-    // v[1] = system(cmd.c_str());
-    // cmd = "cat /sys/class/gpio/gpio" + m_p3_io + "/value";
-    // v[2] = system(cmd.c_str());
+    std::string cmd;
+    int fd;
+    int value;
+    char v[10];
+    std::string msg = "";
+     for (int i=0; i<m_gpio_count; i++)
+     {
+       cmd = "cat /sys/class/gpio/gpio" + gpio_vector.gpio_name[i] + "/value";
+        v[i] = system(cmd.c_str());
+        msg = msg + gpio_vector.device_name[i] + " Power port is" + v[i] + "\r\n";
+     }
 
-    // msg = "Port 1 state =" + v[0] + "| Device Name = " + m_p1_device_name + "\r\n"
-    //     + "Port 2 state =" + v[1] + "| Device Name = " + m_p2_device_name + "\r\n"
-    //     + "Port 3 state =" + v[2] + "| Device Name = " + m_p3_device_name + "\r\n";
-
-    // res.success = 1;
-    // res.message = msg;
-    // printf("Power Manage Info:\r\n");
-    // printf("%s", msg.c_str());
+    res.success = 1;
+    res.message = msg;
+    printf("Power Manage Info:\r\n");
+    printf("%s", msg.c_str());
 }
 
 
