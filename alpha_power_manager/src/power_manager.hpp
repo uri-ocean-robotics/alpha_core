@@ -37,12 +37,17 @@ class PowerManager
         std::vector<gpio_t> gpio_vector;
 
         ros::ServiceServer m_get_p_state;
+        ros::ServiceServer m_set_all_p_state;
 
         bool f_cb_srv_set_power(std_srvs::SetBool::Request &req,
                            std_srvs::SetBool::Response &res, std::string gpio_name);
 
+        bool f_cb_srv_set_power_all(std_srvs::SetBool::Request &req,
+                           std_srvs::SetBool::Response &res);
+        
         bool f_cb_srv_get_state(std_srvs::Trigger::Request &req,
                            std_srvs::Trigger::Response &res);
+                           
         bool f_set_gpio_value(std::string value, std::string gpio_name);
         bool f_initialize_gpio();
 

@@ -30,7 +30,7 @@ PowerManager::PowerManager()
         gpio_t g;
         g.device_name = m_device_name[i];
         g.gpio_name =  std::to_string(m_gpio_name[i]);
-        g.service_name = "set_power_gpio" + g.gpio_name;
+        g.service_name = "power_manager/set_power_gpio" + g.gpio_name;
 
         g.m_set_gpio = m_nh->advertiseService<std_srvs::SetBool::Request, std_srvs::SetBool::Response>
                 (
@@ -48,9 +48,20 @@ PowerManager::PowerManager()
 
     m_get_p_state = m_nh->advertiseService<std_srvs::Trigger::Request, std_srvs::Trigger::Response>
     (
-        "get_power_status",
+        "power_manager/get_power_port_status",
         std::bind(
             &PowerManager::f_cb_srv_get_state,
+            this,
+            std::placeholders::_1,
+            std::placeholders::_2
+        )
+    );
+
+    m_set_all_p_state = m_nh->advertiseService<std_srvs::SetBool::Request, std_srvs::SetBool::Response>
+    (
+        "power_manager/set_all_power_port",
+        std::bind(
+            &PowerManager::f_cb_srv_set_power_all,
             this,
             std::placeholders::_1,
             std::placeholders::_2
@@ -88,19 +99,26 @@ bool PowerManager::f_initialize_gpio()
             if (fd == -1) {
                 printf("Unable to open /sys/class/gpio/export\r\n");
             return false;
-            }            else
+            }else
             {
                 if (write(fd, gpio_vector[i].gpio_name.c_str(), gpio_vector[i].gpio_name.size()) != gpio_vector[i].gpio_name.size()) 
                 {
                     printf("Error writing to /sys/class/gpio/export, gpio %s\r\n", gpio_vector[i].gpio_name.c_str());
                     return false;
                 }
-                close(fd);
+                
             }
+            close(fd);
         }
+    }
+
+    sleep(1);
+    for (int i=0; i<m_gpio_count; i++)
+    {
         //set direction
         m_dir = "/sys/class/gpio/gpio" + gpio_vector[i].gpio_name + "/direction";
         fd = open(m_dir.c_str(), O_WRONLY);
+
         if (write(fd, "out", 3) != 3) 
         {
             printf("Error writing to %s \r\n", gpio_vector[i].gpio_name.c_str());
@@ -134,6 +152,33 @@ bool PowerManager::f_set_gpio_value(std::string value, std::string gpio_name)
         return false;
     }
     close(fd);
+
+}
+
+
+bool PowerManager::f_cb_srv_set_power_all(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res)
+{
+    if(req.data)
+    {
+        for (int i=0; i < m_gpio_count; i++)
+        {
+            f_set_gpio_value("1", gpio_vector[i].gpio_name);
+        }
+        res.success = 1;
+        res.message = "All power ports are enabled";
+        return true;
+    }
+    else
+    {
+        for (int i=0; i < m_gpio_count; i++)
+        {
+            f_set_gpio_value("0", gpio_vector[i].gpio_name);
+        }
+        res.success = 1;
+        res.message = "All power ports are disabled";
+        return true;
+    }
+    return true;
 
 }
 
