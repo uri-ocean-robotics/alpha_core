@@ -14,18 +14,22 @@ PWMDriver::PWMDriver()
 {
     m_nh.reset(new ros::NodeHandle(""));
     m_pnh.reset(new ros::NodeHandle("~"));
+  
+    m_pnh->param<double>("max_ms_offset", m_max_ms_offset, 0.4);
+    m_pnh->param<double>("ms_center", m_ms_center, 1.5);
+    m_pnh->param<std::string>("topic_prefix", m_prefix, "");
 
     m_pnh->getParam("topic_list", m_topic_list);
     m_pnh->getParam("channel_list", m_channel_list);
-    m_pnh->getParam("max_ms_offset", m_max_ms_offset);
-    m_pnh->getParam("ms_center", m_ms_center);
+    
 
     //initialize PCA9685
     pca.set_pwm_freq(50.0);
 
     for (int i = 0; i <m_channel_list.size(); i++)
     {        
-        m_sub_list[i] =  m_nh->subscribe<std_msgs::Float64>(m_topic_list[i].c_str(), 10, 
+        std::string t_name = m_prefix + m_topic_list[i];
+        m_sub_list[i] =  m_nh->subscribe<std_msgs::Float64>(t_name, 10, 
                     std::bind(&PWMDriver::f_cb_pwm_ch, 
                                 this, 
                                 std::placeholders::_1, 

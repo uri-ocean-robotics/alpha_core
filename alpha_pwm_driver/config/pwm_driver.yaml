@@ -1,0 +1,5 @@
+max_ms_offset: 0.4
+ms_center: 1.5
+topic_list: [/control/surge_thruster_link]
+topic_prefix: alpha_rise
+channel_list: [7, 8, 9, 12]
