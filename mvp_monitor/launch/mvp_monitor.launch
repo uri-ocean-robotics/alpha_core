@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <node pkg="mvp_monitor" type="mvp_monitor_node" name="mvp_monitor" output="screen">
+    <rosparam command="load" file="$(find mvp_monitor)/config/param.yaml"/>
+  </node>
+
+</launch>
