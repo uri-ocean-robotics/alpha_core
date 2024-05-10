@@ -5,8 +5,25 @@ MonitorAbort::MonitorAbort(
     const ros::NodeHandle &nh_private) 
     : nh_(nh), pnh_(nh_private) 
 {
+    // load all the parameters
+
     loadParameters();
 
+    // setup service clinet
+
+    clinet_get_state_ = nh_.serviceClient<mvp_msgs::GetState>("alpha_img/helm/get_state");    
+
+    clinet_change_state_ = nh_.serviceClient<mvp_msgs::ChangeState>("alpha_img/helm/change_state");   
+
+    // setup initial monitoring
+
+    while(!getState())
+    {
+        ros::Duration(1.0).sleep();
+    }
+
+    last_state_ = curr_state_;
+    time_count_ = ros::Time::now().toSec();
 
     // setup timer callback to time counting
 
@@ -15,11 +32,105 @@ MonitorAbort::MonitorAbort(
 
 void MonitorAbort::loadParameters()
 {
-    // read some parameters
-    pnh_.param<double>("monitor_rate_", monitor_rate_, 1.0);
+    // load some parameters
+    pnh_.param<double>("monitor_rate", monitor_rate_, 1.0);
+
+    // load abort actions
+    XmlRpc::XmlRpcValue abort_action_list;
+    pnh_.getParam(CONF_MONITOR_ABORT, abort_action_list);   
+
+    ROS_ASSERT(abort_action_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
+
+    for(int32_t i = 0 ; i < abort_action_list.size() ; i++) {
+
+        AbortAction action;
+        std::string state = static_cast<std::string>(abort_action_list[i][CONF_MONITOR_ABORT_STATE]);
+        action.timeout = static_cast<double>(abort_action_list[i][CONF_MONITOR_ABORT_TIMEOUT]);
+        action.transition = static_cast<std::string>(abort_action_list[i][CONF_MONITOR_ABORT_TRANSITION]);
+
+        abort_action_[state] = action;
+        
+        //! DEBUG:
+        // printf("state:%s, timeout:%f, transition:%s\n", state.c_str(), timeout, transition.c_str());
+    }
 }
+
+bool MonitorAbort::getState()
+{
+    // grab the current state
+
+    mvp_msgs::GetState srv_get_state;
+
+    if (!clinet_get_state_.call(srv_get_state)) {
+        ROS_ERROR("MVP_Monitor - abort action: can not get state");
+        return false;
+    }
+
+    // check if this state inside our monitorng list
+
+    auto found = std::find_if(
+        abort_action_.begin(), 
+        abort_action_.end(), 
+        [&](const auto& monitored) 
+        { 
+            return srv_get_state.response.state.name == monitored.first; 
+        });
+
+    if(found == abort_action_.end())
+    {
+        // this is the state we are not minotoring 
+        ROS_ERROR("MVP_Monitor - abort action: %s not on our monitor list", 
+                  srv_get_state.response.state.name.c_str());
+        return false;
+    }
+
+    // save the state
+
+    curr_state_ = srv_get_state.response.state;
+
+    return true;
+}
+
 
 void MonitorAbort::timerCallback(const ros::TimerEvent& event)
 {
-    ROS_INFO("hi from MVP_Monitor timercallback");
+    //! DEBUG:
+    // ROS_INFO("hi from MVP_Monitor timercallback");
+
+    // grab state
+
+    if(!getState())
+    {
+        return;
+    }
+    
+    // check if state changes
+    if(curr_state_ != last_state_)
+    {
+        ROS_INFO("new state:%s, mode:%s", 
+                  curr_state_.name.c_str(), 
+                  curr_state_.mode.c_str());
+
+        // mark the last state
+
+        last_state_ = curr_state_;
+        time_count_ = ros::Time::now().toSec();
+    }
+
+    // check if counted time is reach the max
+    if(ros::Time::now().toSec() - time_count_ > 
+       abort_action_[curr_state_.name].timeout)
+    {
+        // switch the state to given param
+        mvp_msgs::ChangeState srv_change_state;
+
+        srv_change_state.request.state = 
+            abort_action_[curr_state_.name].transition;
+
+        // call the srv to change state
+        if (!clinet_change_state_.call(srv_change_state)) {
+            ROS_ERROR("MVP_Monitor - abort action: call change_state failed");
+            return;
+        }        
+    }
 }

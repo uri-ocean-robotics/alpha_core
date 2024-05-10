@@ -1,3 +1,24 @@
 # brief: the monitoring rate, monitor_time = 1.0 / monitor_rate_
 # example: monitor_rate_=2hz, monitor_time=0.5s, monitor_rate_=0.1hz, monitor_time=10s
-monitor_rate_: 1.0
+monitor_rate: 1.0
+
+# Action: abort
+abort_action:
+    # brief: 
+    #  state: state name that monitored
+    #  timeout: max time stey in this state, e.g., 2h=7200s
+    #  transition: MVP will transit to this state if timeout
+
+  - state: start
+    timeout: .inf  
+    transition: start
+
+  - state: survey_3d
+    timeout: 5.0
+    transition: start
+
+  - state: direct_control
+    timeout: 5.0
+    transition: start
+
+# Action: some action ?
