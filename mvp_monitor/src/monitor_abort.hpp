@@ -5,6 +5,7 @@
 
 #include <ros/ros.h>
 #include <mvp_msgs/GetState.h>
+#include <mvp_msgs/GetStates.h>
 #include <mvp_msgs/ChangeState.h>
 #include <mvp_msgs/HelmState.h>
 
@@ -33,6 +34,8 @@ private:
 
     ros::ServiceClient clinet_get_state_;
 
+    ros::ServiceClient clinet_get_states_;
+
     ros::ServiceClient clinet_change_state_;
 
     ros::Timer timer_;
@@ -49,6 +52,12 @@ private:
 
     double monitor_rate_;
 
+    std::string topic_get_state_;
+    
+    std::string topic_get_states_;
+
+    std::string topic_change_state_;
+
     std::unordered_map<std::string, AbortAction> abort_action_;
 
     // functions 
@@ -62,6 +71,14 @@ private:
      * 
     */
     bool getState();
+
+    /**
+     * use ros srv to get all MVP states
+     * 
+    */
+    bool getStates();
+
+    void initialize();
 
 public:
     MonitorAbort(          

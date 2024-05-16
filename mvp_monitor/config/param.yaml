@@ -1,8 +1,13 @@
-# brief: the monitoring rate, monitor_time = 1.0 / monitor_rate_
+# Brief: the monitoring rate, monitor_time = 1.0 / monitor_rate_
 # example: monitor_rate_=2hz, monitor_time=0.5s, monitor_rate_=0.1hz, monitor_time=10s
 monitor_rate: 1.0
 
-# Action: abort
+# Brief: ros topics for each vehicles
+topic_get_state: alpha_img/helm/get_state
+topic_get_states: alpha_img/helm/get_states
+topic_change_state: alpha_img/helm/change_state
+
+# Brief: the abort action
 abort_action:
     # brief: 
     #  state: state name that monitored
@@ -11,14 +16,17 @@ abort_action:
 
   - state: start
     timeout: .inf  
-    transition: start
+    transition: kill
+    # transition: haha
 
   - state: survey_3d
     timeout: 5.0
     transition: start
+    # transition: hehe
 
   - state: direct_control
     timeout: 5.0
     transition: start
+    # transition: hoho
 
-# Action: some action ?
+# Brief: another action
