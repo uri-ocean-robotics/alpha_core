@@ -19,34 +19,121 @@ MonitorAbort::MonitorAbort(
     initialize();
 
     // setup timer callback to time counting
-    timer_ = nh_.createTimer(ros::Duration(1.0 / monitor_rate_), &MonitorAbort::timerCallback, this);
+    timer_ = nh_.createTimer(
+        ros::Duration(1.0 / monitor_rate_), 
+        &MonitorAbort::timerCallback, this);
 }
 
 void MonitorAbort::loadParameters()
 {
-    // load some parameters
-    pnh_.param<double>("monitor_rate", monitor_rate_, 1.0);
-    pnh_.param<std::string>("topic_get_state", topic_get_state_, "alpha_img/helm/get_state");
-    pnh_.param<std::string>("topic_get_states", topic_get_states_, "alpha_img/helm/get_states");
-    pnh_.param<std::string>("topic_change_state", topic_change_state_, "alpha_img/helm/change_state");
+    // -------------------- load system parameters -------------------- //
+    
+    if(pnh_.hasParam(CONF_MONITOR_RATE))
+    {
+        pnh_.getParam(CONF_MONITOR_RATE, monitor_rate_);
+    }
+    else
+    {
+        monitor_rate_ = DEFAULT_MONITOR_RATE;
+        ROS_WARN(
+            "MVP Monitor - configuration [%s] not exist, use the default value: %f", 
+            CONF_MONITOR_RATE, monitor_rate_);
+    }    
 
-    // load abort actions
+    // -------------------- load rostopic parameters -------------------- //
+
+    if(pnh_.hasParam(CONF_NAME_SPACE))
+    {
+        pnh_.getParam(CONF_NAME_SPACE, name_space_);
+    }
+    else
+    {
+        ROS_ERROR(
+            "MVP Monitor - configuration [%s] not exist, SHUT DOWN NOW!", 
+            CONF_NAME_SPACE);
+        ros::shutdown();
+    } 
+
+    if(pnh_.hasParam(CONF_GET_STATE))
+    {
+        pnh_.getParam(CONF_GET_STATE, topic_get_state_);
+        topic_get_state_ = "/" + name_space_ + "/" + topic_get_state_;
+    }
+    else
+    {
+        topic_get_state_ = "/" + name_space_ + "/" + DEFAULT_TOPIC_GET_STATE;
+        ROS_WARN(
+            "MVP Monitor - configuration [%s] not exist, use the default value: %s", 
+            CONF_GET_STATE, topic_get_state_.c_str());
+    }
+
+    if(pnh_.hasParam(CONF_GET_STATES))
+    {
+        pnh_.getParam(CONF_GET_STATES, topic_get_states_);
+        topic_get_states_ = "/" + name_space_ + "/" + topic_get_states_;
+    }
+    else
+    {
+        topic_get_states_ = "/" + name_space_ + "/" + DEFAULT_TOPIC_GET_STATES;
+        ROS_WARN(
+            "MVP Monitor - configuration [%s] not exist, use the default value: %s", 
+            CONF_GET_STATES, topic_get_states_.c_str());
+    }
+
+    if(pnh_.hasParam(CONF_CHANGE_STATE))
+    {
+        pnh_.getParam(CONF_CHANGE_STATE, topic_change_state_);
+        topic_change_state_ = "/" + name_space_ + "/" + topic_change_state_;
+    }
+    else
+    {
+        topic_change_state_ = "/" + name_space_ + "/" + DEFAULT_TOPIC_CHANGE_STATE;
+        ROS_WARN(
+            "MVP Monitor - configuration [%s] not exist, use the default value: %s", 
+            CONF_CHANGE_STATE, topic_change_state_.c_str());
+    }
+
+    // -------------------- load abort action parameters -------------------- //
+
     XmlRpc::XmlRpcValue abort_action_list;
-    pnh_.getParam(CONF_MONITOR_ABORT, abort_action_list);   
+    if(pnh_.hasParam(CONF_ABORT))
+    {
+        pnh_.getParam(CONF_ABORT, abort_action_list);
+    }
+    else
+    {
+        pnh_.getParam(CONF_ABORT, abort_action_list);
+        ROS_ERROR(
+            "MVP Monitor - configuration [%s] not exist, SHUT DOWN NOW!", 
+            CONF_ABORT);
+        ros::shutdown();
+    }
 
     ROS_ASSERT(abort_action_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
 
     for(int32_t i = 0 ; i < abort_action_list.size() ; i++) {
+        // check if each sub-configue exits
+        bool has_state = abort_action_list[i].hasMember(CONF_ABORT_STATE);
+        bool has_timeout = abort_action_list[i].hasMember(CONF_ABORT_TIMEOUT);
+        bool has_transition = abort_action_list[i].hasMember(CONF_ABORT_TRANSITION);
+
+        if(! has_state || ! has_timeout || !has_transition)
+        {
+            ROS_ERROR(
+                "MVP Monitor - No.%d of abort action miss parts:[%s: %s], [%s: %s], [%s: %s], SHUT DOWN NOW!",
+                i+1,
+                CONF_ABORT_STATE, has_state ? "Given" : "Not Given",
+                CONF_ABORT_TIMEOUT, has_timeout ? "Given" : "Not Given",
+                CONF_ABORT_TRANSITION, has_transition ? "Given" : "Not Given");
+
+            ros::shutdown();
+        }
 
         AbortAction action;
-        std::string state = static_cast<std::string>(abort_action_list[i][CONF_MONITOR_ABORT_STATE]);
-        action.timeout = static_cast<double>(abort_action_list[i][CONF_MONITOR_ABORT_TIMEOUT]);
-        action.transition = static_cast<std::string>(abort_action_list[i][CONF_MONITOR_ABORT_TRANSITION]);
-
+        std::string state = static_cast<std::string>(abort_action_list[i][CONF_ABORT_STATE]);
+        action.timeout = static_cast<double>(abort_action_list[i][CONF_ABORT_TIMEOUT]);
+        action.transition = static_cast<std::string>(abort_action_list[i][CONF_ABORT_TRANSITION]);
         abort_action_[state] = action;
-        
-        //! DEBUG:
-        // printf("state:%s, timeout:%f, transition:%s\n", state.c_str(), timeout, transition.c_str());
     }
 }
 
@@ -78,7 +165,7 @@ bool MonitorAbort::getState()
     mvp_msgs::GetState srv_get_state;
 
     if (!clinet_get_state_.call(srv_get_state)) {
-        ROS_ERROR("MVP_Monitor - abort action: can not get state");
+        ROS_WARN("MVP_Monitor - abort action: can not get state");
         return false;
     }
 
@@ -94,7 +181,7 @@ bool MonitorAbort::getState()
     if(found == abort_action_.end())
     {
         // this is the state we are not minotoring 
-        ROS_ERROR("MVP_Monitor - abort action: %s not on our monitor list", 
+        ROS_WARN("MVP_Monitor - abort action: %s not on our monitor list", 
                   srv_get_state.response.state.name.c_str());
         return false;
     }
@@ -112,7 +199,7 @@ bool MonitorAbort::getStates()
 
     //! NOTE: this will block until srv available
     if (!clinet_get_states_.call(srv_get_states)) {
-        ROS_ERROR("MVP_Monitor - abort action: can not get all states");
+        ROS_WARN("MVP_Monitor - abort action: can not get all states");
         return false;
     }    
 
@@ -147,10 +234,10 @@ bool MonitorAbort::getStates()
             // print error
             ROS_ERROR("MVP_Monitor - The monitored transition [ %s ] of state [ %s ] not meet the requirements", 
                         action.transition.c_str(), recv_state.name.c_str());
-            ROS_ERROR("MVP_Monitor - The correct transitions of state [ %s ] are: %s\n", 
+            ROS_ERROR("MVP_Monitor - The correct transitions of state [ %s ] are: %s, SHUT DOWN NOW\n", 
                        recv_state.name.c_str(), str.c_str());
 
-            std::exit(EXIT_FAILURE);
+            ros::shutdown();
         }
     }
 
@@ -193,7 +280,7 @@ void MonitorAbort::timerCallback(const ros::TimerEvent& event)
 
         // call the srv to change state
         if (!clinet_change_state_.call(srv_change_state)) {
-            ROS_ERROR("MVP_Monitor - abort action: call change_state failed");
+            ROS_WARN("MVP_Monitor - abort action: call change_state failed");
             return;
         }        
     }

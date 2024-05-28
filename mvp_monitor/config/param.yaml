@@ -3,9 +3,13 @@
 monitor_rate: 1.0
 
 # Brief: ros topics for each vehicles
-topic_get_state: alpha_img/helm/get_state
-topic_get_states: alpha_img/helm/get_states
-topic_change_state: alpha_img/helm/change_state
+name_space: alpha_img
+
+topic_get_state: helm/get_state
+
+topic_get_states: helm/get_states
+
+topic_change_state: helm/change_state
 
 # Brief: the abort action
 abort_action:
@@ -17,16 +21,13 @@ abort_action:
   - state: start
     timeout: .inf  
     transition: kill
-    # transition: haha
-
+    
   - state: survey_3d
     timeout: 5.0
     transition: start
-    # transition: hehe
 
   - state: direct_control
     timeout: 5.0
     transition: start
-    # transition: hoho
 
 # Brief: another action

@@ -9,12 +9,14 @@
 #include <mvp_msgs/ChangeState.h>
 #include <mvp_msgs/HelmState.h>
 
+#include "default.hpp"
+
 #define CONST_STRING static constexpr const char *
 
-CONST_STRING CONF_MONITOR_ABORT = "abort_action";
-CONST_STRING CONF_MONITOR_ABORT_STATE = "state";
-CONST_STRING CONF_MONITOR_ABORT_TIMEOUT = "timeout";
-CONST_STRING CONF_MONITOR_ABORT_TRANSITION = "transition";
+// CONST_STRING CONF_ABORT = "abort_action";
+// CONST_STRING CONF_ABORT_STATE = "state";
+// CONST_STRING CONF_ABORT_TIMEOUT = "timeout";
+// CONST_STRING CONF_ABORT_TRANSITION = "transition";
 
 struct AbortAction {
     double timeout;
@@ -51,6 +53,8 @@ private:
     // parameters
 
     double monitor_rate_;
+
+    std::string name_space_;
 
     std::string topic_get_state_;
     
