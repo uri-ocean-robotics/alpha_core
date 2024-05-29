@@ -18,10 +18,14 @@ abort_action:
     #  timeout: max time stey in this state, e.g., 2h=7200s
     #  transition: MVP will transit to this state if timeout
 
+  # - state: kill
+  #   timeout: 1.0  
+  #   transition: start
+
   - state: start
     timeout: .inf  
     transition: kill
-    
+
   - state: survey_3d
     timeout: 5.0
     transition: start

@@ -9,11 +9,14 @@ MonitorAbort::MonitorAbort(
     loadParameters();
 
     // setup service clinet
-    clinet_get_state_ = nh_.serviceClient<mvp_msgs::GetState>(topic_get_state_);    
+    clinet_get_state_ = 
+        nh_.serviceClient<mvp_msgs::GetState>(topic_get_state_);    
 
-    clinet_get_states_ = nh_.serviceClient<mvp_msgs::GetStates>(topic_get_states_);    
+    clinet_get_states_ = 
+        nh_.serviceClient<mvp_msgs::GetStates>(topic_get_states_);    
 
-    clinet_change_state_ = nh_.serviceClient<mvp_msgs::ChangeState>(topic_change_state_);   
+    clinet_change_state_ = 
+        nh_.serviceClient<mvp_msgs::ChangeState>(topic_change_state_);   
 
     // init
     initialize();
@@ -140,7 +143,7 @@ void MonitorAbort::loadParameters()
 void MonitorAbort::initialize()
 {
     // check all the transitions of state are correct
-    while(!getStates())
+    while(!verifyParameters())
     {
         ros::Duration(1.0).sleep();
     }
@@ -192,19 +195,60 @@ bool MonitorAbort::getState()
     return true;
 }
 
-bool MonitorAbort::getStates()
+bool MonitorAbort::verifyParameters()
 {
     // grab the current state
     mvp_msgs::GetStates srv_get_states;
 
-    //! NOTE: this will block until srv available
+    // --------------------------------------------------------------------- //
+    // Grab all the states
+    // --------------------------------------------------------------------- // 
+
     if (!clinet_get_states_.call(srv_get_states)) {
         ROS_WARN("MVP_Monitor - abort action: can not get all states");
         return false;
     }    
 
+    auto &recv_states = srv_get_states.response.states;
+
+    // --------------------------------------------------------------------- //
+    // check the states are recognized by MVP Finite State Machine
+    // --------------------------------------------------------------------- //
+
+    for(const auto& [monitored_state, action] :  abort_action_)
+    {
+        // check if each monitored state
+        auto frame = std::find_if(
+            recv_states.begin(), recv_states.end(), [&](auto &recv_state) 
+            { return recv_state.name == monitored_state; });
+        
+        // if not, send error and shut down the node
+        if(frame == recv_states.end())
+        {
+            // get all states
+            std::string str;
+            for(const auto& recv_state : recv_states)
+            {
+                str += "[" + recv_state.name + "] ";
+            }
+
+            // send errors
+            ROS_ERROR(
+                "MVP Monitor - the monitored state [%s] is not in the MVP Finite State Machine",
+                monitored_state.c_str());
+            ROS_ERROR(
+                "MVP_Monitor - The correct states are: %s, SHUT DOWN NOW", 
+                str.c_str());
+            ros::shutdown();
+        }
+    }
+
+    // --------------------------------------------------------------------- //
+    // check the transition are recognized by MVP Finite State Machine 
+    // --------------------------------------------------------------------- //
+
     // check if each transition meet the MVP_Mission requirements 
-    for(const auto& recv_state: srv_get_states.response.states)
+    for(const auto& recv_state: recv_states)
     {
         // go to next state if this is not in our monitor list
         if(abort_action_.find(recv_state.name) == abort_action_.end())
@@ -234,7 +278,7 @@ bool MonitorAbort::getStates()
             // print error
             ROS_ERROR("MVP_Monitor - The monitored transition [ %s ] of state [ %s ] not meet the requirements", 
                         action.transition.c_str(), recv_state.name.c_str());
-            ROS_ERROR("MVP_Monitor - The correct transitions of state [ %s ] are: %s, SHUT DOWN NOW\n", 
+            ROS_ERROR("MVP_Monitor - The correct transitions of state [ %s ] are: %s, SHUT DOWN NOW", 
                        recv_state.name.c_str(), str.c_str());
 
             ros::shutdown();

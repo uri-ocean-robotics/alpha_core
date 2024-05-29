@@ -11,13 +11,6 @@
 
 #include "default.hpp"
 
-#define CONST_STRING static constexpr const char *
-
-// CONST_STRING CONF_ABORT = "abort_action";
-// CONST_STRING CONF_ABORT_STATE = "state";
-// CONST_STRING CONF_ABORT_TIMEOUT = "timeout";
-// CONST_STRING CONF_ABORT_TRANSITION = "transition";
-
 struct AbortAction {
     double timeout;
     std::string transition;
@@ -77,10 +70,10 @@ private:
     bool getState();
 
     /**
-     * use ros srv to get all MVP states
+     * verify all the states are able to change
      * 
     */
-    bool getStates();
+    bool verifyParameters();
 
     void initialize();
 
