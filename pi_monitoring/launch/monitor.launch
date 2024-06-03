@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<!--
+    This file is part of ALPHA AUV project.
+
+    Author: Tony Jacob
+    Email: tony.jacob@uri.edu
+    Year: 2024
+-->
+<launch>
+    <node name="pi_monitor_node" pkg="pi_monitoring" type="log_ram_temp.py" output="screen"/>
+</launch>
