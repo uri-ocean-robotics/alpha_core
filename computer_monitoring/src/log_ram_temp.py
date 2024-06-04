@@ -14,6 +14,8 @@ from sensor_msgs.msg import Temperature
 class Log_RAM_Temp:
     def __init__(self) -> None:
         self.device = self.check_device()
+        
+        #Get device name to add to topic
         device_name = self.device.split()[1].lower()
         self.pub_ram_info = rospy.Publisher(device_name+"/ram_utilized", Float64, queue_size=1)
         self.pub_cpu_temp_info = rospy.Publisher(device_name+"/cpu/temp", Temperature, queue_size=1)
