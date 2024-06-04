@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>pi_monitoring</name>
+  <name>computer_monitoring</name>
   <version>0.0.0</version>
-  <description>The pi_monitoring package</description>
+  <description>The computer_monitoring package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->

@@ -14,15 +14,13 @@ from sensor_msgs.msg import Temperature
 class Log_RAM_Temp:
     def __init__(self) -> None:
         self.device = self.check_device()
-        if self.device == 'Raspberry Pi':
-            self.pub_ram_info = rospy.Publisher("/alpha_rise/pi/ram_utilized", Float64, queue_size=1)
-            self.pub_cpu_temp_info = rospy.Publisher("/alpha_rise/pi/cpu/temp", Temperature, queue_size=1)
-            self.pub_cpu_usage_info = rospy.Publisher("/alpha_rise/pi/cpu/utilized", Float64, queue_size=1)
         
-        elif self.device == 'NVIDIA Jetson':
-            self.pub_ram_info = rospy.Publisher("/alpha_rise/jetson/ram_utilized", Float64, queue_size=1)
-            self.pub_cpu_temp_info = rospy.Publisher("/alpha_rise/jetson/cpu/temp", Temperature, queue_size=1)
-            self.pub_cpu_usage_info = rospy.Publisher("/alpha_rise/jetson/cpu/utilized", Float64, queue_size=1)
+        #Get device name to add to topic
+        device_name = self.device.split()[1].lower()
+        self.pub_ram_info = rospy.Publisher(device_name+"/ram_utilized", Float64, queue_size=1)
+        self.pub_cpu_temp_info = rospy.Publisher(device_name+"/cpu/temp", Temperature, queue_size=1)
+        self.pub_cpu_usage_info = rospy.Publisher(device_name+"/cpu/utilized", Float64, queue_size=1)
+        
         self.rate = rospy.Rate(1)
         self.collect_and_publish()
 
@@ -84,6 +82,6 @@ class Log_RAM_Temp:
             self.rate.sleep()
     
 if __name__ == "__main__":
-    rospy.init_node("pi_monitor_node")
+    rospy.init_node("computer_monitoring", anonymous=True)
     Log_RAM_Temp()
     rospy.spin()
