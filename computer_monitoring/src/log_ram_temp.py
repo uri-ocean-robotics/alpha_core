@@ -82,6 +82,6 @@ class Log_RAM_Temp:
             self.rate.sleep()
     
 if __name__ == "__main__":
-    rospy.init_node("pi_monitor_node", anonymous=True)
+    rospy.init_node("computer_monitoring", anonymous=True)
     Log_RAM_Temp()
     rospy.spin()
