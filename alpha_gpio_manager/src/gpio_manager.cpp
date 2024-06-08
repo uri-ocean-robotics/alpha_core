@@ -66,7 +66,7 @@ GPIOManager::GPIOManager()
 
     m_get_p_state = m_nh->advertiseService<std_srvs::Trigger::Request, std_srvs::Trigger::Response>
     (
-        "gpio_manager/get_power_port_status",
+        "gpio_manager/get_power_status",
         std::bind(
             &GPIOManager::f_cb_srv_get_state,
             this,
@@ -199,7 +199,7 @@ bool GPIOManager::f_cb_srv_get_state(
 
     for (int i=0; i<m_gpio_count; i++)
     {
-        msg = msg + "|Device:"+ gpio_vector[i].device_name + "=" + std::to_string(gpio_vector[i].state);
+        msg = msg + "gpio_manager/set_power_"+ gpio_vector[i].device_name + "=" + std::to_string(gpio_vector[i].state) + "\r\n" ;
     }
     res.success = 1;
     res.message = msg;
