@@ -195,11 +195,11 @@ bool GPIOManager::f_cb_srv_get_state(
                         std_srvs::Trigger::Request &req,
                         std_srvs::Trigger::Response &res)
 {
-    std::string msg = "#GPIO Manager#";
+    std::string msg = "#GPIO Status#";
 
     for (int i=0; i<m_gpio_count; i++)
     {
-        msg = msg + "|Device:"+ gpio_vector[i].device_name + "=" + std::to_string(gpio_vector[i].state);
+        msg = msg + "gpio_manager/set_power_"+ gpio_vector[i].device_name + "=" + std::to_string(gpio_vector[i].state) + "\r\n" ;
     }
     res.success = 1;
     res.message = msg;
