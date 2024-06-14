@@ -10,7 +10,7 @@
 -->
 <launch>
 
-    <arg name="robot_name" default="changeme"/>
+    <arg name="robot_name" default="alpha_rise"/>
 
 
     <node ns="$(arg robot_name)" name="$(arg robot_name)_gpio_manager_node" pkg="alpha_gpio_manager" type="gpio_manager_node" output="screen">
