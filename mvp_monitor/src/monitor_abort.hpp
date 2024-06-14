@@ -49,11 +49,11 @@ private:
 
     std::string name_space_;
 
-    std::string topic_get_state_;
+    std::string srv_get_state_;
     
-    std::string topic_get_states_;
+    std::string srv_get_states_;
 
-    std::string topic_change_state_;
+    std::string srv_change_state_;
 
     std::unordered_map<std::string, AbortAction> abort_action_;
 
@@ -73,8 +73,16 @@ private:
      * verify all the states are able to change
      * 
     */
-    bool verifyParameters();
+    bool verifyAbortAction();
 
+    /**
+     * verify all the ros service are available 
+     * 
+    */
+    void verifySrv();
+
+    void setupRos();
+    
     void initialize();
 
 public:

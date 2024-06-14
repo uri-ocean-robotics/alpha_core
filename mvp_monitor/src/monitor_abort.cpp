@@ -8,23 +8,8 @@ MonitorAbort::MonitorAbort(
     // load all the parameters
     loadParameters();
 
-    // setup service clinet
-    clinet_get_state_ = 
-        nh_.serviceClient<mvp_msgs::GetState>(topic_get_state_);    
-
-    clinet_get_states_ = 
-        nh_.serviceClient<mvp_msgs::GetStates>(topic_get_states_);    
-
-    clinet_change_state_ = 
-        nh_.serviceClient<mvp_msgs::ChangeState>(topic_change_state_);   
-
     // init
     initialize();
-
-    // setup timer callback to time counting
-    timer_ = nh_.createTimer(
-        ros::Duration(1.0 / monitor_rate_), 
-        &MonitorAbort::timerCallback, this);
 }
 
 void MonitorAbort::loadParameters()
@@ -43,7 +28,7 @@ void MonitorAbort::loadParameters()
             CONF_MONITOR_RATE, monitor_rate_);
     }    
 
-    // -------------------- load rostopic parameters -------------------- //
+    // -------------------- load ros parameters -------------------- //
 
     if(pnh_.hasParam(CONF_NAME_SPACE))
     {
@@ -59,41 +44,41 @@ void MonitorAbort::loadParameters()
 
     if(pnh_.hasParam(CONF_GET_STATE))
     {
-        pnh_.getParam(CONF_GET_STATE, topic_get_state_);
-        topic_get_state_ = "/" + name_space_ + "/" + topic_get_state_;
+        pnh_.getParam(CONF_GET_STATE, srv_get_state_);
+        srv_get_state_ = "/" + name_space_ + "/" + srv_get_state_;
     }
     else
     {
-        topic_get_state_ = "/" + name_space_ + "/" + DEFAULT_TOPIC_GET_STATE;
+        srv_get_state_ = "/" + name_space_ + "/" + DEFAULT_SRV_GET_STATE;
         ROS_WARN(
             "MVP Monitor - configuration [%s] not exist, use the default value: %s", 
-            CONF_GET_STATE, topic_get_state_.c_str());
+            CONF_GET_STATE, srv_get_state_.c_str());
     }
 
     if(pnh_.hasParam(CONF_GET_STATES))
     {
-        pnh_.getParam(CONF_GET_STATES, topic_get_states_);
-        topic_get_states_ = "/" + name_space_ + "/" + topic_get_states_;
+        pnh_.getParam(CONF_GET_STATES, srv_get_states_);
+        srv_get_states_ = "/" + name_space_ + "/" + srv_get_states_;
     }
     else
     {
-        topic_get_states_ = "/" + name_space_ + "/" + DEFAULT_TOPIC_GET_STATES;
+        srv_get_states_ = "/" + name_space_ + "/" + DEFAULT_SRV_GET_STATES;
         ROS_WARN(
             "MVP Monitor - configuration [%s] not exist, use the default value: %s", 
-            CONF_GET_STATES, topic_get_states_.c_str());
+            CONF_GET_STATES, srv_get_states_.c_str());
     }
 
     if(pnh_.hasParam(CONF_CHANGE_STATE))
     {
-        pnh_.getParam(CONF_CHANGE_STATE, topic_change_state_);
-        topic_change_state_ = "/" + name_space_ + "/" + topic_change_state_;
+        pnh_.getParam(CONF_CHANGE_STATE, srv_change_state_);
+        srv_change_state_ = "/" + name_space_ + "/" + srv_change_state_;
     }
     else
     {
-        topic_change_state_ = "/" + name_space_ + "/" + DEFAULT_TOPIC_CHANGE_STATE;
+        srv_change_state_ = "/" + name_space_ + "/" + DEFAULT_SRV_CHANGE_STATE;
         ROS_WARN(
             "MVP Monitor - configuration [%s] not exist, use the default value: %s", 
-            CONF_CHANGE_STATE, topic_change_state_.c_str());
+            CONF_CHANGE_STATE, srv_change_state_.c_str());
     }
 
     // -------------------- load abort action parameters -------------------- //
@@ -140,10 +125,58 @@ void MonitorAbort::loadParameters()
     }
 }
 
+void MonitorAbort::verifySrv()
+{
+    while(!ros::service::exists(srv_get_state_, false))
+    {
+        ROS_WARN("MVP_Monitor - no Service [%s], either Node not started or wrong Service Name", 
+            srv_get_state_.c_str());
+        ros::Duration(1.0).sleep();
+    }
+
+    while(!ros::service::exists(srv_get_states_, false))
+    {
+        ROS_WARN("MVP_Monitor - no Service [%s], either Node not started or wrong Service Name",
+            srv_get_states_.c_str());
+        ros::Duration(1.0).sleep();
+    }
+
+    while(!ros::service::exists(srv_change_state_, false))
+    {
+        ROS_WARN("MVP_Monitor - no Service [%s], either Node not started or wrong Service Name", 
+            srv_change_state_.c_str());
+        ros::Duration(1.0).sleep();
+    }
+}
+
+void MonitorAbort::setupRos()
+{
+    // setup service clinet
+    clinet_get_state_ = 
+        nh_.serviceClient<mvp_msgs::GetState>(srv_get_state_);    
+
+    clinet_get_states_ = 
+        nh_.serviceClient<mvp_msgs::GetStates>(srv_get_states_);    
+
+    clinet_change_state_ = 
+        nh_.serviceClient<mvp_msgs::ChangeState>(srv_change_state_);   
+
+    // setup timer callback to time counting
+    timer_ = nh_.createTimer(
+        ros::Duration(1.0 / monitor_rate_), 
+        &MonitorAbort::timerCallback, this);        
+}
+
 void MonitorAbort::initialize()
 {
-    // check all the transitions of state are correct
-    while(!verifyParameters())
+    // verify the ROS service are correct
+    verifySrv();
+
+    // setup ROS
+    setupRos();
+
+    // verify the abort action parameters are correct
+    while(!verifyAbortAction())
     {
         ros::Duration(1.0).sleep();
     }
@@ -195,7 +228,7 @@ bool MonitorAbort::getState()
     return true;
 }
 
-bool MonitorAbort::verifyParameters()
+bool MonitorAbort::verifyAbortAction()
 {
     // grab the current state
     mvp_msgs::GetStates srv_get_states;

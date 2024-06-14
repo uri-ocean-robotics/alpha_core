@@ -5,11 +5,11 @@ monitor_rate: 1.0
 # Brief: ros topics for each vehicles
 name_space: alpha_img
 
-topic_get_state: helm/get_state
+srv_get_state: helm/get_state
 
-topic_get_states: helm/get_states
+srv_get_states: helm/get_states
 
-topic_change_state: helm/change_state
+srv_change_state: helm/change_state
 
 # Brief: the abort action
 abort_action:
