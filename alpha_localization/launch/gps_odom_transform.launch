@@ -1,0 +1,19 @@
+<launch>
+
+    <arg name="robot_name" value="alpha_rise"/>
+   
+    <node ns="$(arg robot_name)" pkg="alpha_localization" type="gps_odom_transform_node" name="gps_odom_transform_node" output="screen">
+        <param name = "tf_prefix" value="$(arg robot_name)"/>
+        <param name = "mag_declination" value="0.3" />
+        <!-- beach_pond -->
+        <param name = "datum_latitude" value="41.574236666666664"/>
+        <param name = "datum_longitude" value="-71.787575"/>
+        <!-- allen harbor -->
+        <!-- <param name = "datum_latitude" value="41.621578"/> -->
+        <!-- <param name = "datum_longitude" value="-71.410905"/> -->
+        <param name = "position_accuracy" value="3.0"/>
+    </node>
+
+
+
+</launch>
