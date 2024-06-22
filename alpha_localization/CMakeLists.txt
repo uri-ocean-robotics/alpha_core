@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   imu_transformer
   geographic_msgs
   nav_msgs
+  tf2_eigen
 )
 
 find_package(Eigen3 REQUIRED)

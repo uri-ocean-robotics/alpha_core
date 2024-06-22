@@ -38,6 +38,9 @@
 #include <cstdio>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_ros/transform_listener.h>
+#include "tf2/LinearMath/Matrix3x3.h"
+#include "tf2_eigen/tf2_eigen.h"
+
 
 #include "memory"
 #include "vector"
@@ -108,6 +111,10 @@ private:
 
     void f_dis2ll(geometry_msgs::Point map_point, geographic_msgs::GeoPoint& ll_point);
     
+
+    tf2_ros::Buffer m_transform_buffer;
+
+    std::shared_ptr<tf2_ros::TransformListener> m_transform_listener;
 
 public:
 
