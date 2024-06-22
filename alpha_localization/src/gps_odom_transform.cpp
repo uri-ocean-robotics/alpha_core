@@ -119,6 +119,7 @@ void GpsOdomTransform::f_cb_gps_fix(const sensor_msgs::NavSatFix& msg)
     gps_world.pose.pose.position.y =-sin(m_mag_declination)*map_point.x + cos(m_mag_declination)*map_point.y;
     gps_world.header.frame_id = m_odom_frame;
     gps_world.header.stamp = msg.header.stamp;
+
     gps_world.pose.covariance[0] = pow(m_position_accuracy,2);
     gps_world.pose.covariance[1] = 0;
     gps_world.pose.covariance[2] = 0;
