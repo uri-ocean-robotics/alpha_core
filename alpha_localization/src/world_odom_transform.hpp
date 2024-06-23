@@ -48,7 +48,7 @@
 #include "functional"
 #include "cmath"
 
-class GpsOdomTransform{
+class WorldOdomTransform{
 
 private:
 
@@ -131,7 +131,7 @@ private:
     
 public:
 
-    GpsOdomTransform();
+    WorldOdomTransform();
     
     // void f_check_tf();
 

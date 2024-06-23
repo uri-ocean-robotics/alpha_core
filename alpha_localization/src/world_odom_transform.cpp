@@ -21,10 +21,10 @@
     Copyright (C) 2024 Smart Ocean Systems Laboratory
 */
 
-#include "gps_odom_transform.hpp"
+#include "world_odom_transform.hpp"
 #include <tf2_ros/transform_broadcaster.h>
 
-GpsOdomTransform::GpsOdomTransform(){
+WorldOdomTransform::WorldOdomTransform(){
     m_nh.reset(new ros::NodeHandle(""));
     m_pnh.reset(new ros::NodeHandle("~"));
     
@@ -71,9 +71,9 @@ GpsOdomTransform::GpsOdomTransform(){
 
 
     m_gps_fix_subscriber = m_nh->subscribe("gps/fix", 10, 
-                                &GpsOdomTransform::f_cb_gps_fix, this);
+                                &WorldOdomTransform::f_cb_gps_fix, this);
     m_odom_subscriber = m_nh->subscribe("odometry", 10, 
-                                &GpsOdomTransform::f_cb_odom, this);
+                                &WorldOdomTransform::f_cb_odom, this);
 
     /**
      * Initialize services
@@ -82,7 +82,7 @@ GpsOdomTransform::GpsOdomTransform(){
         robot_localization::FromLL::Response>
         (
         "fromLL",
-        std::bind(&GpsOdomTransform::f_cb_fromLL_srv,
+        std::bind(&WorldOdomTransform::f_cb_fromLL_srv,
             this,std::placeholders::_1,std::placeholders::_2
         )
         );
@@ -91,7 +91,7 @@ GpsOdomTransform::GpsOdomTransform(){
         robot_localization::ToLL::Response>
         (
         "toLL",
-        std::bind(&GpsOdomTransform::f_cb_toLL_srv,
+        std::bind(&WorldOdomTransform::f_cb_toLL_srv,
             this,
             std::placeholders::_1,std::placeholders::_2
         )
@@ -101,7 +101,7 @@ GpsOdomTransform::GpsOdomTransform(){
         std_srvs::Trigger::Response>
         (
         "reset_datum",
-        std::bind(&GpsOdomTransform::f_cb_reset_datum_srv,
+        std::bind(&WorldOdomTransform::f_cb_reset_datum_srv,
             this,std::placeholders::_1,std::placeholders::_2
         )
         );
@@ -112,7 +112,7 @@ GpsOdomTransform::GpsOdomTransform(){
     
 }
 
-void GpsOdomTransform::f_cb_gps_fix(const sensor_msgs::NavSatFix& msg)
+void WorldOdomTransform::f_cb_gps_fix(const sensor_msgs::NavSatFix& msg)
 {
     //compute the latitude longitude in the world frame using datum.
     geometry_msgs::Point map_point;
@@ -126,6 +126,7 @@ void GpsOdomTransform::f_cb_gps_fix(const sensor_msgs::NavSatFix& msg)
     if(m_datum_set)
     {
         m_datum_publisher.publish(m_datum); 
+        return;
     }
     // printf("Got GPS\r\n");
     //only do the following if the tf between world and odom are set.
@@ -179,11 +180,12 @@ void GpsOdomTransform::f_cb_gps_fix(const sensor_msgs::NavSatFix& msg)
         }
         else{
             ROS_INFO("GPS fix covariance is more than %lf\r\n", m_acceptable_var);
+            return;
         }
     }
 }
 
-bool GpsOdomTransform::f_set_tf()
+bool WorldOdomTransform::f_set_tf()
 {
     //check the quality of the gps if the x and y variance is good enough?
 
@@ -222,7 +224,7 @@ bool GpsOdomTransform::f_set_tf()
 }
 
 
-void GpsOdomTransform::f_cb_odom(const nav_msgs::Odometry& msg)
+void WorldOdomTransform::f_cb_odom(const nav_msgs::Odometry& msg)
 {
     // printf("got odometry\r\n");
     
@@ -235,25 +237,25 @@ void GpsOdomTransform::f_cb_odom(const nav_msgs::Odometry& msg)
     }
 }
 
-bool GpsOdomTransform::f_cb_reset_datum_srv(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp)
+bool WorldOdomTransform::f_cb_reset_datum_srv(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp)
 {
 
 }
 
-bool GpsOdomTransform::f_cb_fromLL_srv(robot_localization::FromLL::Request &req, robot_localization::FromLL::Response &resp)
+bool WorldOdomTransform::f_cb_fromLL_srv(robot_localization::FromLL::Request &req, robot_localization::FromLL::Response &resp)
 {
     f_ll2dis(req.ll_point, resp.map_point);
     return true;
 
 }
 
-bool GpsOdomTransform::f_cb_toLL_srv(robot_localization::ToLL::Request &req, robot_localization::ToLL::Response &resp)
+bool WorldOdomTransform::f_cb_toLL_srv(robot_localization::ToLL::Request &req, robot_localization::ToLL::Response &resp)
 {
     f_dis2ll(req.map_point, resp.ll_point);
     return true;
 }
 
-void GpsOdomTransform::f_ll2dis(geographic_msgs::GeoPoint ll_point, geometry_msgs::Point& map_point)
+void WorldOdomTransform::f_ll2dis(geographic_msgs::GeoPoint ll_point, geometry_msgs::Point& map_point)
 {
     double north = m_earthR*(ll_point.latitude - m_datum.latitude)/180.0*M_PI;
     double east = m_earthR*cos(m_datum.latitude/180.0*M_PI) * (ll_point.longitude - m_datum.longitude)/180.0*M_PI;
@@ -264,7 +266,7 @@ void GpsOdomTransform::f_ll2dis(geographic_msgs::GeoPoint ll_point, geometry_msg
 
 }
 
-void GpsOdomTransform::f_dis2ll(geometry_msgs::Point map_point, geographic_msgs::GeoPoint& ll_point)
+void WorldOdomTransform::f_dis2ll(geometry_msgs::Point map_point, geographic_msgs::GeoPoint& ll_point)
 {
     //from world frame
     double lat = m_datum.latitude + map_point.y/m_earthR * 180.0/M_PI;
@@ -279,7 +281,7 @@ int main(int argc, char* argv[]) {
 
     ros::init(argc, argv, "gps_transform");
 
-    GpsOdomTransform d;
+    WorldOdomTransform d;
     
     ros::spin();
 
