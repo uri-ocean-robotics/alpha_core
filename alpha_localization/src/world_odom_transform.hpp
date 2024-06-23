@@ -25,15 +25,19 @@
 
 #include "ros/ros.h"
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
+#include "geometry_msgs/PoseStamped.h"
+
 #include "mvp_msgs/Float64Stamped.h"
 #include "geographic_msgs/GeoPoint.h"
+#include "geographic_msgs/GeoPoseStamped.h"
 #include "geometry_msgs/Point.h"
 #include "sensor_msgs/NavSatFix.h"
 #include "std_srvs/Trigger.h"
 #include "robot_localization/FromLL.h"
 #include "robot_localization/ToLL.h"
 #include "nav_msgs/Odometry.h"
-#include <tf2_ros/static_transform_broadcaster.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+// #include <tf2_ros/static_transform_broadcaster.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <cstdio>
 #include <tf2/LinearMath/Quaternion.h>
@@ -41,6 +45,7 @@
 #include "tf2/LinearMath/Matrix3x3.h"
 #include "tf2_eigen/tf2_eigen.h"
 #include <tf2_ros/transform_broadcaster.h>
+// #include <tf2_ros/doTransform.h>
 
 #include "memory"
 #include "vector"
@@ -58,7 +63,10 @@ private:
 
 
     ros::Publisher m_gps_odom_publisher;
+
     ros::Publisher m_datum_publisher;
+
+    ros::Publisher m_geopose_publisher;
 
 
     ros::Subscriber m_gps_fix_subscriber;

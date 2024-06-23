@@ -14,6 +14,8 @@ find_package(catkin REQUIRED COMPONENTS
   geographic_msgs
   nav_msgs
   tf2_eigen
+  tf2
+  tf2_ros
 )
 
 find_package(Eigen3 REQUIRED)

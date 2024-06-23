@@ -69,6 +69,8 @@ WorldOdomTransform::WorldOdomTransform(){
     
     m_datum_publisher = m_nh->advertise<geographic_msgs::GeoPoint>("gps/datum",10);
 
+    m_geopose_publisher = m_nh->advertise<geographic_msgs::GeoPoseStamped>("odometry/geopose",10);
+
 
     m_gps_fix_subscriber = m_nh->subscribe("gps/fix", 10, 
                                 &WorldOdomTransform::f_cb_gps_fix, this);
@@ -227,13 +229,52 @@ bool WorldOdomTransform::f_set_tf()
 void WorldOdomTransform::f_cb_odom(const nav_msgs::Odometry& msg)
 {
     // printf("got odometry\r\n");
-    
     m_odom = msg;
+    // printf("tf_set =%d \r\n", m_tf_set);
     //if tf is set i will keep setting the tf
     if(m_tf_set)
-    {
-    transformStamped.header.stamp = ros::Time::now();
-    br.sendTransform(transformStamped);
+    {   
+        
+        //publishtf
+        transformStamped.header.stamp = ros::Time::now();
+        br.sendTransform(transformStamped);
+        //convert odom from odom to world 
+        try {        
+            auto tf_o2w = m_transform_buffer.lookupTransform(
+                m_world_frame,
+                m_odom_frame,
+                ros::Time(0)
+            );
+            geometry_msgs::PoseStamped odom_pose, world_pose;
+            odom_pose.header = msg.header;
+            odom_pose.pose = msg.pose.pose;
+
+            // Transform the pose from odom frame to world frame
+            tf2::doTransform(odom_pose, world_pose, tf_o2w);
+            geometry_msgs::Point map_point;
+            geographic_msgs::GeoPoint ll_point;
+
+            map_point.x = world_pose.pose.position.x;
+            map_point.y = world_pose.pose.position.y;
+            map_point.z = world_pose.pose.position.z;
+
+            f_dis2ll(map_point, ll_point);
+            geographic_msgs::GeoPoseStamped geopose;
+
+            geopose.pose.position.latitude = ll_point.latitude;
+            geopose.pose.position.longitude = ll_point.longitude;
+            geopose.pose.position.altitude = ll_point.altitude;
+            geopose.pose.orientation.x = world_pose.pose.orientation.x;
+            geopose.pose.orientation.y = world_pose.pose.orientation.y;
+            geopose.pose.orientation.z = world_pose.pose.orientation.z;
+            geopose.pose.orientation.w = world_pose.pose.orientation.w;
+            geopose.header= world_pose.header;
+            
+            m_geopose_publisher.publish(geopose);
+
+        } catch(tf2::TransformException &e) {
+            ROS_WARN_STREAM_THROTTLE(10, std::string("Can't get the tf from world to odom") + e.what());
+        }
     }
 }
 
