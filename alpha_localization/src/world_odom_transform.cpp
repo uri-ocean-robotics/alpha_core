@@ -146,17 +146,30 @@ void WorldOdomTransform::f_cb_gps_fix(const sensor_msgs::NavSatFix& msg)
                 m_world_frame,
                 ros::Time(0)
             );
-            auto tf_eigen = tf2::transformToEigen(tf_w2o);
 
-            Eigen::Vector3d p_odom;
-            p_odom = tf_eigen.rotation() * Eigen::Vector3d(map_point.x, map_point.y, map_point.z) + tf_eigen.translation();
-            // printf("Latlon=%lf, %lf\r\n", ll_point.latitude, ll_point.longitude);
-            // printf("T_matrix=%lf,%lf\r\n", tf_eigen.translation().x(), tf_eigen.translation().y());
-            // printf("map_point=%lf,%lf\r\n", map_point.x, map_point.y);
-            // printf("translated=%lf, %lf\r\n", p_odom.x(), p_odom.y());
-            // printf("odom_point=%lf,%lf\r\n",m_odom.pose.pose.position.x, m_odom.pose.pose.position.y);
-            gps_world.pose.pose.position.x = p_odom.x();
-            gps_world.pose.pose.position.y = p_odom.y();
+            geometry_msgs::PoseStamped odom_pose, world_pose;
+            world_pose.header = msg.header;
+            world_pose.pose.position.x = map_point.x;
+            world_pose.pose.position.y = map_point.y;
+            world_pose.pose.position.z = map_point.z;
+            world_pose.pose.orientation.x = 0;
+            world_pose.pose.orientation.y = 0;
+            world_pose.pose.orientation.z = 0;
+            world_pose.pose.orientation.w = 0;
+            // Transform the pose from odom frame to world frame
+            tf2::doTransform(world_pose, odom_pose, tf_w2o);
+
+            // auto tf_eigen = tf2::transformToEigen(tf_w2o);
+
+            // Eigen::Vector3d p_odom;
+            // p_odom = tf_eigen.rotation() * Eigen::Vector3d(map_point.x, map_point.y, map_point.z) + tf_eigen.translation();
+            // // printf("Latlon=%lf, %lf\r\n", ll_point.latitude, ll_point.longitude);
+            // // printf("T_matrix=%lf,%lf\r\n", tf_eigen.translation().x(), tf_eigen.translation().y());
+            // // printf("map_point=%lf,%lf\r\n", map_point.x, map_point.y);
+            // // printf("translated=%lf, %lf\r\n", p_odom.x(), p_odom.y());
+            // // printf("odom_point=%lf,%lf\r\n",m_odom.pose.pose.position.x, m_odom.pose.pose.position.y);
+            gps_world.pose.pose.position.x = odom_pose.pose.position.x;
+            gps_world.pose.pose.position.y = odom_pose.pose.position.y;
             gps_world.header.frame_id = m_odom_frame;
             gps_world.header.stamp = msg.header.stamp;
             gps_world.pose.covariance[0] = pow(m_position_accuracy,2);
