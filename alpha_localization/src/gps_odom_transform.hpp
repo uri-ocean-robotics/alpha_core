@@ -40,7 +40,7 @@
 #include <tf2_ros/transform_listener.h>
 #include "tf2/LinearMath/Matrix3x3.h"
 #include "tf2_eigen/tf2_eigen.h"
-
+#include <tf2_ros/transform_broadcaster.h>
 
 #include "memory"
 #include "vector"
@@ -81,6 +81,8 @@ private:
     
     std::string m_tf_prefix;
 
+
+
     double m_earthR = 6371000;
 
     double m_mag_declination;
@@ -97,11 +99,13 @@ private:
 
     double m_position_accuracy;
 
+    bool m_publish_tf;
+
     void f_cb_gps_fix(const sensor_msgs::NavSatFix& msg);
 
     void f_cb_odom(const nav_msgs::OdometryConstPtr& msg);
 
-    bool f_cb_reset_tf_srv(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp);
+    bool f_cb_reset_datum_srv(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp);
 
     bool f_cb_fromLL_srv(robot_localization::FromLL::Request &req, robot_localization::FromLL::Response &resp);
     
@@ -110,6 +114,8 @@ private:
     void f_ll2dis(geographic_msgs::GeoPoint ll_point, geometry_msgs::Point& map_point);
 
     void f_dis2ll(geometry_msgs::Point map_point, geographic_msgs::GeoPoint& ll_point);
+
+    void f_update_tf(geometry_msgs::Point map_point);
     
 
     tf2_ros::Buffer m_transform_buffer;
@@ -119,7 +125,10 @@ private:
 public:
 
     GpsOdomTransform();
-    void f_check_tf();
+    // void f_check_tf();
+
+    geometry_msgs::TransformStamped transformStamped;
+    tf2_ros::TransformBroadcaster br;
 
 };
 

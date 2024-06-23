@@ -22,6 +22,7 @@
 */
 
 #include "gps_odom_transform.hpp"
+#include <tf2_ros/transform_broadcaster.h>
 
 GpsOdomTransform::GpsOdomTransform(){
     m_nh.reset(new ros::NodeHandle(""));
@@ -33,7 +34,7 @@ GpsOdomTransform::GpsOdomTransform(){
 
     m_pnh->param<std::string>("tf_prefix", m_tf_prefix, "");
 
-    // m_pnh->param<double>("mag_declination", m_mag_declination, 0.0);
+    m_pnh->param<double>("mag_declination", m_mag_declination, 0.0);
     //mag_north - true north in ENU frame.
 
     m_pnh->param<double>("acceptable_var", m_acceptable_var, 0.0);
@@ -48,6 +49,8 @@ GpsOdomTransform::GpsOdomTransform(){
 
     m_pnh->param<double>("datum_altitude", m_datum_altitude, 0.0);
 
+    m_pnh->param<bool>("publish_tf", m_publish_tf, true);
+    
     m_datum.latitude = m_datum_latitude;
     m_datum.longitude = m_datum_longitude;
     m_datum.altitude = m_datum_altitude;
@@ -92,7 +95,7 @@ GpsOdomTransform::GpsOdomTransform(){
         std_srvs::Trigger::Response>
         (
         "reset_datum",
-        std::bind(&GpsOdomTransform::f_cb_reset_tf_srv,
+        std::bind(&GpsOdomTransform::f_cb_reset_datum_srv,
             this,std::placeholders::_1,std::placeholders::_2
         )
         );
@@ -115,14 +118,16 @@ void GpsOdomTransform::f_cb_gps_fix(const sensor_msgs::NavSatFix& msg)
     ll_point.altitude = msg.altitude;
     //Get x and y from lattiude and longitude. x->east, y->north
     f_ll2dis(ll_point, map_point);
-
+    if(m_publish_tf)
+    {
+    f_update_tf(map_point);
+    }
     //convert distance from gps into odom frame using mag_declination.
     try {
             auto tf_w2o = m_transform_buffer.lookupTransform(
                 m_odom_frame,
                 m_world_frame,
-                ros::Time::now(),
-                ros::Duration(1.0)
+                ros::Time(0)
             );
             Eigen::Vector3d p_world;
             auto tf_eigen = tf2::transformToEigen(tf_w2o);
@@ -149,20 +154,43 @@ void GpsOdomTransform::f_cb_gps_fix(const sensor_msgs::NavSatFix& msg)
             gps_world.pose.covariance[14] =  pow(m_position_accuracy,2);
 
 
-    m_gps_odom_publisher.publish(gps_world);
-    m_datum_publisher.publish(m_datum);
+            m_gps_odom_publisher.publish(gps_world);
+            m_datum_publisher.publish(m_datum);
+
+            
         } catch(tf2::TransformException &e) {
             ROS_WARN_STREAM_THROTTLE(10, std::string("Can't get the tf from world to odom") + e.what());
         }
-
+        
 }
+
+void GpsOdomTransform::f_update_tf(geometry_msgs::Point map_point)
+{
+    
+    // printf("tf update\r\n");
+    transformStamped.header.stamp = ros::Time::now();
+    transformStamped.header.frame_id = m_world_frame;
+    transformStamped.child_frame_id = m_odom_frame;
+    transformStamped.transform.translation.x = m_odom.pose.pose.position.x - map_point.x;
+    transformStamped.transform.translation.y = m_odom.pose.pose.position.y - map_point.y;
+    transformStamped.transform.translation.z = m_odom.pose.pose.position.z -0.0;
+    tf2::Quaternion q;
+    q.setRPY(0, 0, m_mag_declination);
+    transformStamped.transform.rotation.x = q.x();
+    transformStamped.transform.rotation.y = q.y();
+    transformStamped.transform.rotation.z = q.z();
+    transformStamped.transform.rotation.w = q.w();
+    br.sendTransform(transformStamped);
+}
+
 
 void GpsOdomTransform::f_cb_odom(const nav_msgs::OdometryConstPtr& msg)
 {
-    // m_odom = *msg;
+    m_odom = *msg;
+
 }
 
-bool GpsOdomTransform::f_cb_reset_tf_srv(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp)
+bool GpsOdomTransform::f_cb_reset_datum_srv(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp)
 {
 
 }
@@ -209,7 +237,17 @@ int main(int argc, char* argv[]) {
     GpsOdomTransform d;
 
     ros::spin();
+    // ros::Rate loop_rate(10);
+    // while (ros::ok())
+    // {
 
+        // ros::spinOnce();
+        // printf("publishing tf, %s->%s\r\n", d.transformStamped.header.frame_id.c_str(), d.transformStamped.child_frame_id.c_str());
+        // d.br.sendTransform(d.transformStamped);
+
+        // loop_rate.sleep();
+
+    // }
 
     return 0;
 }
