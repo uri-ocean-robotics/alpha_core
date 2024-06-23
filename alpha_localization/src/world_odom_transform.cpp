@@ -55,10 +55,13 @@ WorldOdomTransform::WorldOdomTransform(){
     m_datum.longitude = m_datum_longitude;
     m_datum.altitude = m_datum_altitude;
 
-    if(m_datum.latitude==0)
-    {
+
+    if(m_datum.latitude==0){
         ROS_WARN("Datum is not set please set the parameters");
         m_datum_set = false;
+    }
+    else{
+        m_datum_set = true;
     }
     m_tf_set = false;
     m_world_frame = m_tf_prefix + "/" + m_world_frame;
@@ -99,11 +102,20 @@ WorldOdomTransform::WorldOdomTransform(){
         )
         );
 
-    reset_tf_server = m_pnh->advertiseService<std_srvs::Trigger::Request,
+    reset_datum_server = m_pnh->advertiseService<std_srvs::Trigger::Request,
         std_srvs::Trigger::Response>
         (
         "reset_datum",
         std::bind(&WorldOdomTransform::f_cb_reset_datum_srv,
+            this,std::placeholders::_1,std::placeholders::_2
+        )
+        );
+
+    reset_tf_server = m_pnh->advertiseService<std_srvs::Trigger::Request,
+        std_srvs::Trigger::Response>
+        (
+        "reset_tf",
+        std::bind(&WorldOdomTransform::f_cb_reset_tf_srv,
             this,std::placeholders::_1,std::placeholders::_2
         )
         );
@@ -118,25 +130,27 @@ void WorldOdomTransform::f_cb_gps_fix(const sensor_msgs::NavSatFix& msg)
 {
     //compute the latitude longitude in the world frame using datum.
     geometry_msgs::Point map_point;
-    nav_msgs::Odometry gps_world;
+    nav_msgs::Odometry gps_odom;
     geographic_msgs::GeoPoint ll_point;
 
     m_gps = msg;
+    m_gps_for_datum = msg;
     m_odom_gps = m_odom; //map the most recent odom;
 
 
     if(m_datum_set)
     {
         m_datum_publisher.publish(m_datum); 
-        return;
     }
     // printf("Got GPS\r\n");
     //only do the following if the tf between world and odom are set.
-    if(m_tf_set)
+    if(m_tf_set && m_datum_set)
     {
+        
         ll_point.latitude = msg.latitude;
         ll_point.longitude = msg.longitude;
         ll_point.altitude = msg.altitude;
+
         //Get x and y from lattiude and longitude. x->east, y->north
         f_ll2dis(ll_point, map_point);
         //convert distance from gps into odom frame using mag_declination.
@@ -149,56 +163,56 @@ void WorldOdomTransform::f_cb_gps_fix(const sensor_msgs::NavSatFix& msg)
 
             geometry_msgs::PoseStamped odom_pose, world_pose;
             world_pose.header = msg.header;
+            world_pose.header.frame_id = m_world_frame;
             world_pose.pose.position.x = map_point.x;
             world_pose.pose.position.y = map_point.y;
             world_pose.pose.position.z = map_point.z;
             world_pose.pose.orientation.x = 0;
             world_pose.pose.orientation.y = 0;
             world_pose.pose.orientation.z = 0;
-            world_pose.pose.orientation.w = 0;
+            world_pose.pose.orientation.w = 1.0;
             // Transform the pose from odom frame to world frame
             tf2::doTransform(world_pose, odom_pose, tf_w2o);
 
-            // auto tf_eigen = tf2::transformToEigen(tf_w2o);
+            auto tf_eigen = tf2::transformToEigen(tf_w2o);
 
-            // Eigen::Vector3d p_odom;
-            // p_odom = tf_eigen.rotation() * Eigen::Vector3d(map_point.x, map_point.y, map_point.z) + tf_eigen.translation();
-            // // printf("Latlon=%lf, %lf\r\n", ll_point.latitude, ll_point.longitude);
-            // // printf("T_matrix=%lf,%lf\r\n", tf_eigen.translation().x(), tf_eigen.translation().y());
-            // // printf("map_point=%lf,%lf\r\n", map_point.x, map_point.y);
-            // // printf("translated=%lf, %lf\r\n", p_odom.x(), p_odom.y());
-            // // printf("odom_point=%lf,%lf\r\n",m_odom.pose.pose.position.x, m_odom.pose.pose.position.y);
-            gps_world.pose.pose.position.x = odom_pose.pose.position.x;
-            gps_world.pose.pose.position.y = odom_pose.pose.position.y;
-            gps_world.header.frame_id = m_odom_frame;
-            gps_world.header.stamp = msg.header.stamp;
-            gps_world.pose.covariance[0] = pow(m_position_accuracy,2);
-            gps_world.pose.covariance[1] = 0;
-            gps_world.pose.covariance[2] = 0;
-            gps_world.pose.covariance[6] =0;
-            gps_world.pose.covariance[7] =  pow(m_position_accuracy,2);
-            gps_world.pose.covariance[8] = 0;
-            gps_world.pose.covariance[12] = 0;
-            gps_world.pose.covariance[13] = 0;
-            gps_world.pose.covariance[14] =  pow(m_position_accuracy,2);
+            gps_odom.pose.pose.position.x = odom_pose.pose.position.x;
+            gps_odom.pose.pose.position.y = odom_pose.pose.position.y;
+            gps_odom.header.frame_id = m_odom_frame;
+            gps_odom.header.stamp = msg.header.stamp;
+            gps_odom.pose.covariance[0] = pow(m_position_accuracy,2);
+            gps_odom.pose.covariance[1] = 0;
+            gps_odom.pose.covariance[2] = 0;
+            gps_odom.pose.covariance[6] =0;
+            gps_odom.pose.covariance[7] =  pow(m_position_accuracy,2);
+            gps_odom.pose.covariance[8] = 0;
+            gps_odom.pose.covariance[12] = 0;
+            gps_odom.pose.covariance[13] = 0;
+            gps_odom.pose.covariance[14] =  pow(m_position_accuracy,2);
 
-            m_gps_odom_publisher.publish(gps_world);       
+            m_gps_odom_publisher.publish(gps_odom);   
+
         } catch(tf2::TransformException &e) {
             ROS_WARN_STREAM_THROTTLE(10, std::string("Can't get the tf from world to odom") + e.what());
         }
     }
     else
     {
-        if(m_gps.position_covariance[0]<m_acceptable_var && m_gps.position_covariance[4]<m_acceptable_var)
+        if(m_datum_set)
         {
-            f_set_tf();
-        }
-        else{
-            ROS_INFO("GPS fix covariance is more than %lf\r\n", m_acceptable_var);
-            return;
+            if(m_gps.position_covariance[0]<m_acceptable_var && m_gps.position_covariance[4]<m_acceptable_var)
+            {
+                f_set_tf();
+            }
+            else{
+                ROS_INFO("GPS fix covariance is more than %lf\r\n", m_acceptable_var);
+                return;
+            }
         }
     }
 }
+
+
 
 bool WorldOdomTransform::f_set_tf()
 {
@@ -206,10 +220,12 @@ bool WorldOdomTransform::f_set_tf()
 
     geographic_msgs::GeoPoint ll_point;
     geometry_msgs::Point map_point;
-
-    ll_point.latitude = m_gps.latitude;
-    ll_point.longitude = m_gps.longitude;
-    ll_point.altitude = m_gps.altitude;
+    nav_msgs::Odometry m_odom_gps_temp = m_odom_gps;
+    sensor_msgs::NavSatFix m_gps_temp = m_gps;
+    
+    ll_point.latitude = m_gps_temp.latitude;
+    ll_point.longitude = m_gps_temp.longitude;
+    ll_point.altitude = m_gps_temp.altitude;
     //Get x and y from lattiude and longitude. x->east, y->north
     f_ll2dis(ll_point, map_point);
 
@@ -217,21 +233,50 @@ bool WorldOdomTransform::f_set_tf()
     transformStamped.header.stamp = ros::Time::now();
     transformStamped.header.frame_id = m_world_frame;
     transformStamped.child_frame_id = m_odom_frame;
-    double dx = -m_odom_gps.pose.pose.position.x + map_point.x;
-    double dy = -m_odom_gps.pose.pose.position.y + map_point.y;
-    // printf("dx=%lf, dy =%lf\r\n", dx, dy);
+
+    //convert odom xy into world first using magnetic declination
+    double odom_world_x = m_odom_gps_temp.pose.pose.position.x*cos(m_mag_declination) - m_odom_gps_temp.pose.pose.position.y*sin(m_mag_declination);
+    double odom_world_y = m_odom_gps_temp.pose.pose.position.x*sin(m_mag_declination) + m_odom_gps_temp.pose.pose.position.y*cos(m_mag_declination);
+
+    double dx =  map_point.x -odom_world_x;
+    double dy =  map_point.y - odom_world_y;
+    printf("gps fix in world =%lf, %lf\r\n", map_point.x, map_point.y);
+    printf("matching odom position= %lf, %lf\r\n", m_odom_gps_temp.pose.pose.position.x, m_odom_gps_temp.pose.pose.position.y);
+
     transformStamped.transform.translation.x = dx;
     transformStamped.transform.translation.y = dy;
-    transformStamped.transform.translation.z = m_odom_gps.pose.pose.position.z - 0.0;
+    transformStamped.transform.translation.z = -m_odom_gps_temp.pose.pose.position.z + 0.0;
 
     tf2::Quaternion q;
     q.setRPY(0, 0, m_mag_declination);
+
     transformStamped.transform.rotation.x = q.x();
     transformStamped.transform.rotation.y = q.y();
     transformStamped.transform.rotation.z = q.z();
     transformStamped.transform.rotation.w = q.w();
     transformStamped.header.stamp = ros::Time::now();
     br.sendTransform(transformStamped);
+    // sleep(0.1);
+    
+    // //checking the m_gps in odom should align with the m_odom_gps
+    // try {        
+    //     auto tf_w2o = m_transform_buffer.lookupTransform(
+    //         m_odom_frame,
+    //         m_world_frame,
+    //         ros::Time(0),
+    //         ros::Duration(1)
+    //     );
+
+    //     auto tf_eigen = tf2::transformToEigen(tf_w2o);
+    //     Eigen::Vector3d p_odom;
+
+    //     p_odom = tf_eigen.rotation() * Eigen::Vector3d(map_point.x, map_point.y, 0) + tf_eigen.translation();
+    //     printf("gps fix points in odom with new tf=%lf,%lf\r\n\r\n", p_odom.x(), p_odom.y());
+
+
+    // } catch(tf2::TransformException &e) {
+    //         ROS_WARN_STREAM_THROTTLE(10, std::string("Can't get the tf from world to odom") + e.what());
+    //     }
 
     ROS_INFO("TF Between world and odom is set\r\n");
     m_tf_set = true;
@@ -241,9 +286,7 @@ bool WorldOdomTransform::f_set_tf()
 
 void WorldOdomTransform::f_cb_odom(const nav_msgs::Odometry& msg)
 {
-    // printf("got odometry\r\n");
     m_odom = msg;
-    // printf("tf_set =%d \r\n", m_tf_set);
     //if tf is set i will keep setting the tf
     if(m_tf_set)
     {   
@@ -293,7 +336,38 @@ void WorldOdomTransform::f_cb_odom(const nav_msgs::Odometry& msg)
 
 bool WorldOdomTransform::f_cb_reset_datum_srv(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp)
 {
+    m_datum_set = false;
+    m_tf_set = false;
+    //if the gps covariance is not small we will wait.
+    ros::Time datum_reset_request_time = ros::Time::now();
+    while(ros::Time::now().toSec()-datum_reset_request_time.toSec()<m_gps_wait_time)
+    {
+        ROS_INFO("Waiting for a good gps fix for datum");
+        if(m_gps_for_datum.position_covariance[0]<m_acceptable_var && m_gps_for_datum.position_covariance[4]<m_acceptable_var)
+        {
+            m_datum.latitude = m_gps_for_datum.latitude;
+            m_datum.longitude = m_gps_for_datum.longitude;
+            m_datum.altitude = m_gps_for_datum.altitude;
+            m_datum_set = true;
+            break;
+        }
+        sleep(1);
+    }
+    if(m_datum_set){
+        resp.success = true;
+        resp.message = "Datum reset done";
+    }
+    else{
+        resp.success = false;
+        resp.message = "Datum failed due to lack of good gps fix within the defined time";
+    }
+}
 
+bool WorldOdomTransform::f_cb_reset_tf_srv(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp)
+{
+    m_tf_set = false;
+    resp.success = true;
+    resp.message = "tf reset triggered";
 }
 
 bool WorldOdomTransform::f_cb_fromLL_srv(robot_localization::FromLL::Request &req, robot_localization::FromLL::Response &resp)

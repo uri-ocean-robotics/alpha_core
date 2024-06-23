@@ -37,7 +37,7 @@
 #include "robot_localization/ToLL.h"
 #include "nav_msgs/Odometry.h"
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-// #include <tf2_ros/static_transform_broadcaster.h>
+#include <tf2_ros/static_transform_broadcaster.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <cstdio>
 #include <tf2/LinearMath/Quaternion.h>
@@ -79,11 +79,15 @@ private:
 
     ros::ServiceServer reset_tf_server;
 
+    ros::ServiceServer reset_datum_server;
+
     geographic_msgs::GeoPoint m_datum;
 
     nav_msgs::Odometry m_odom, m_odom_gps;
 
     sensor_msgs::NavSatFix m_gps;
+
+    sensor_msgs::NavSatFix m_gps_for_datum;
 
     std::string m_world_frame;
 
@@ -119,6 +123,8 @@ private:
 
     bool f_cb_reset_datum_srv(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp);
 
+    bool f_cb_reset_tf_srv(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp);
+
     bool f_cb_fromLL_srv(robot_localization::FromLL::Request &req, robot_localization::FromLL::Response &resp);
     
     bool f_cb_toLL_srv(robot_localization::ToLL::Request &req, robot_localization::ToLL::Response &resp);
@@ -130,7 +136,7 @@ private:
     bool f_set_tf();
 
     geometry_msgs::TransformStamped transformStamped;
-    tf2_ros::TransformBroadcaster br;
+    tf2_ros::StaticTransformBroadcaster br;
 
     tf2_ros::Buffer m_transform_buffer;
 
