@@ -81,8 +81,6 @@ private:
     
     std::string m_tf_prefix;
 
-
-
     double m_earthR = 6371000;
 
     double m_mag_declination;

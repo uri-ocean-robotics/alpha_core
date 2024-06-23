@@ -139,8 +139,6 @@ void GpsOdomTransform::f_cb_gps_fix(const sensor_msgs::NavSatFix& msg)
                                 + tf_eigen.translation();
             gps_world.pose.pose.position.x = p_world.x();
             gps_world.pose.pose.position.y = p_world.y();
-            // gps_world.pose.pose.position.x = cos(m_mag_declination)*map_point.x + sin(m_mag_declination)*map_point.y;
-            // gps_world.pose.pose.position.y =-sin(m_mag_declination)*map_point.x + cos(m_mag_declination)*map_point.y;
             gps_world.header.frame_id = m_odom_frame;
             gps_world.header.stamp = msg.header.stamp;
             gps_world.pose.covariance[0] = pow(m_position_accuracy,2);
@@ -152,7 +150,6 @@ void GpsOdomTransform::f_cb_gps_fix(const sensor_msgs::NavSatFix& msg)
             gps_world.pose.covariance[12] = 0;
             gps_world.pose.covariance[13] = 0;
             gps_world.pose.covariance[14] =  pow(m_position_accuracy,2);
-
 
             m_gps_odom_publisher.publish(gps_world);
             m_datum_publisher.publish(m_datum);
