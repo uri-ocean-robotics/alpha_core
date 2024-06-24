@@ -23,6 +23,9 @@
 
 #include "world_odom_transform.hpp"
 #include <tf2_ros/transform_broadcaster.h>
+#include <GeographicLib/Geodesic.hpp>
+#include <GeographicLib/MagneticModel.hpp>
+
 
 WorldOdomTransform::WorldOdomTransform(){
     m_nh.reset(new ros::NodeHandle(""));
@@ -34,7 +37,7 @@ WorldOdomTransform::WorldOdomTransform(){
 
     m_pnh->param<std::string>("tf_prefix", m_tf_prefix, "");
 
-    m_pnh->param<double>("mag_declination", m_mag_declination, 0.0);
+    // m_pnh->param<double>("mag_declination", m_mag_declination, 0.0);
     //mag_north - true north in ENU frame.
 
     m_pnh->param<double>("acceptable_var", m_acceptable_var, 0.0);
@@ -222,13 +225,23 @@ bool WorldOdomTransform::f_set_tf()
     geometry_msgs::Point map_point;
     nav_msgs::Odometry m_odom_gps_temp = m_odom_gps;
     sensor_msgs::NavSatFix m_gps_temp = m_gps;
+    GeographicLib::MagneticModel magModel("WMM2020");
+
     
     ll_point.latitude = m_gps_temp.latitude;
     ll_point.longitude = m_gps_temp.longitude;
     ll_point.altitude = m_gps_temp.altitude;
     //Get x and y from lattiude and longitude. x->east, y->north
     f_ll2dis(ll_point, map_point);
-
+    //get mag declination
+    double h, Bx, By, Bz;
+    double H, F, D, I;
+    magModel(2024, ll_point.latitude,ll_point.longitude, h, Bx, By, Bz);
+    GeographicLib::MagneticModel::FieldComponents(Bx, By, Bz, H, F, D, I);
+    //D is negative to west but we are in ENU frame.
+    m_mag_declination = -D *M_PI/180.0;
+    // Print the magnetic field components
+    //  printf("declination = %lf\r\n", D);
     // printf("tf update\r\n");
     transformStamped.header.stamp = ros::Time::now();
     transformStamped.header.frame_id = m_world_frame;
@@ -385,23 +398,40 @@ bool WorldOdomTransform::f_cb_toLL_srv(robot_localization::ToLL::Request &req, r
 
 void WorldOdomTransform::f_ll2dis(geographic_msgs::GeoPoint ll_point, geometry_msgs::Point& map_point)
 {
-    double north = m_earthR*(ll_point.latitude - m_datum.latitude)/180.0*M_PI;
-    double east = m_earthR*cos(m_datum.latitude/180.0*M_PI) * (ll_point.longitude - m_datum.longitude)/180.0*M_PI;
+    // double north = m_earthR*(ll_point.latitude - m_datum.latitude)/180.0*M_PI;
+    // double east = m_earthR*cos(m_datum.latitude/180.0*M_PI) * (ll_point.longitude - m_datum.longitude)/180.0*M_PI;
+    
+    //in world frame.
+    //Geographic lib implementation
+    double distance, azimuth1, azimuth2;
+    const GeographicLib::Geodesic& geod = GeographicLib::Geodesic::WGS84();
+    geod.Inverse(m_datum.latitude, m_datum.longitude, 
+                 ll_point.latitude, ll_point.longitude, 
+                 distance, azimuth1, azimuth2);
+    double north = distance *cos(azimuth1/180.0*M_PI);
+    double east = distance * sin(azimuth1/180.0*M_PI);
+
     map_point.x = east;
     map_point.y = north;
     map_point.z = ll_point.altitude;
-    //in world frame.
-
 }
 
 void WorldOdomTransform::f_dis2ll(geometry_msgs::Point map_point, geographic_msgs::GeoPoint& ll_point)
 {
     //from world frame
-    double lat = m_datum.latitude + map_point.y/m_earthR * 180.0/M_PI;
-    double lon = m_datum.longitude + map_point.x/(m_earthR*cos(m_datum.latitude/180.0*M_PI)) * 180.0/M_PI;
+    // double lat = m_datum.latitude + map_point.y/m_earthR * 180.0/M_PI;
+    // double lon = m_datum.longitude + map_point.x/(m_earthR*cos(m_datum.latitude/180.0*M_PI)) * 180.0/M_PI;
+    const GeographicLib::Geodesic& geod = GeographicLib::Geodesic::WGS84();
+    double lat, lon;
+     // Calculate latitude and longitude of target point
+    geod.Direct(m_datum.latitude, m_datum.longitude, 0.0, map_point.y, lat, lon); // Move north
+    geod.Direct(lat, lon, 90.0, map_point.x, lat, lon); // Move east
+    
     ll_point.latitude = lat;
     ll_point.longitude = lon;
     ll_point.altitude = map_point.z;
+
+
 }
 
 
