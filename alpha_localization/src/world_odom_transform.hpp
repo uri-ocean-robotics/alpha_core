@@ -99,6 +99,8 @@ private:
 
     bool m_tf_set = false;
 
+    bool m_mag_declination_auto;
+
     double m_earthR = 6371000;
 
     double m_mag_declination;

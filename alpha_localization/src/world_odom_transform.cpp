@@ -37,7 +37,9 @@ WorldOdomTransform::WorldOdomTransform(){
 
     m_pnh->param<std::string>("tf_prefix", m_tf_prefix, "");
 
-    // m_pnh->param<double>("mag_declination", m_mag_declination, 0.0);
+    m_pnh->param<double>("mag_declination", m_mag_declination, 0.0);
+
+    m_pnh->param<bool>("mag_declination_auto", m_mag_declination_auto, true);
     //mag_north - true north in ENU frame.
 
     m_pnh->param<double>("acceptable_var", m_acceptable_var, 0.0);
@@ -239,7 +241,10 @@ bool WorldOdomTransform::f_set_tf()
     magModel(2024, ll_point.latitude,ll_point.longitude, h, Bx, By, Bz);
     GeographicLib::MagneticModel::FieldComponents(Bx, By, Bz, H, F, D, I);
     //D is negative to west but we are in ENU frame.
-    m_mag_declination = -D *M_PI/180.0;
+    if (m_mag_declination_auto)
+    {
+        m_mag_declination = -D *M_PI/180.0;
+    }
     // Print the magnetic field components
     //  printf("declination = %lf\r\n", D);
     // printf("tf update\r\n");
