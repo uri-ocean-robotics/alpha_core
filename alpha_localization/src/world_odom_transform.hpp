@@ -73,6 +73,9 @@ private:
 
     ros::Subscriber m_odom_subscriber;
 
+    ros::Subscriber m_depth_subscriber;
+
+
     ros::ServiceServer fromLL_server;
 
     ros::ServiceServer toLL_server;
@@ -84,6 +87,8 @@ private:
     geographic_msgs::GeoPoint m_datum;
 
     nav_msgs::Odometry m_odom, m_odom_gps;
+
+    geometry_msgs::PoseWithCovarianceStamped m_depth, m_depth_gps;
 
     sensor_msgs::NavSatFix m_gps;
 
@@ -122,6 +127,8 @@ private:
     void f_cb_gps_fix(const sensor_msgs::NavSatFix& msg);
 
     void f_cb_odom(const nav_msgs::Odometry& msg);
+    
+    void f_cb_depth(const geometry_msgs::PoseWithCovarianceStamped& msg);
 
     bool f_cb_reset_datum_srv(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp);
 

@@ -85,6 +85,8 @@ WorldOdomTransform::WorldOdomTransform(){
     m_odom_subscriber = m_nh->subscribe("odometry", 10, 
                                 &WorldOdomTransform::f_cb_odom, this);
 
+    m_depth_subscriber=m_nh->subscribe("depth_filtered", 10, 
+                                &WorldOdomTransform::f_cb_depth, this);
     /**
      * Initialize services
      */
@@ -141,7 +143,7 @@ void WorldOdomTransform::f_cb_gps_fix(const sensor_msgs::NavSatFix& msg)
     m_gps = msg;
     m_gps_for_datum = msg;
     m_odom_gps = m_odom; //map the most recent odom;
-
+    m_depth_gps = m_depth;
 
     if(m_datum_set)
     {
@@ -232,7 +234,9 @@ bool WorldOdomTransform::f_set_tf()
     geographic_msgs::GeoPoint ll_point;
     geometry_msgs::Point map_point;
     nav_msgs::Odometry m_odom_gps_temp = m_odom_gps;
+    geometry_msgs::PoseWithCovarianceStamped m_depth_gps_temp = m_depth_gps;
     sensor_msgs::NavSatFix m_gps_temp = m_gps;
+
     GeographicLib::MagneticModel magModel("WMM2020");
 
     
@@ -269,7 +273,7 @@ bool WorldOdomTransform::f_set_tf()
 
     transformStamped.transform.translation.x = dx;
     transformStamped.transform.translation.y = dy;
-    transformStamped.transform.translation.z = -m_odom_gps_temp.pose.pose.position.z + 0.0;
+    transformStamped.transform.translation.z = m_depth_gps_temp.pose.pose.position.z + 0.0;
 
     tf2::Quaternion q;
     q.setRPY(0, 0, m_mag_declination);
@@ -356,6 +360,11 @@ void WorldOdomTransform::f_cb_odom(const nav_msgs::Odometry& msg)
             ROS_WARN_STREAM_THROTTLE(10, std::string("Can't get the tf from world to odom") + e.what());
         }
     }
+}
+
+void WorldOdomTransform::f_cb_depth(const geometry_msgs::PoseWithCovarianceStamped& msg)
+{
+    m_depth = msg;
 }
 
 bool WorldOdomTransform::f_cb_reset_datum_srv(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp)
