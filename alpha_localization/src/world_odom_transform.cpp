@@ -88,7 +88,7 @@ WorldOdomTransform::WorldOdomTransform(){
     /**
      * Initialize services
      */
-    fromLL_server = m_pnh->advertiseService<robot_localization::FromLL::Request,
+    fromLL_server = m_nh->advertiseService<robot_localization::FromLL::Request,
         robot_localization::FromLL::Response>
         (
         "fromLL",
@@ -97,7 +97,7 @@ WorldOdomTransform::WorldOdomTransform(){
         )
         );
 
-    toLL_server = m_pnh->advertiseService<robot_localization::ToLL::Request,
+    toLL_server = m_nh->advertiseService<robot_localization::ToLL::Request,
         robot_localization::ToLL::Response>
         (
         "toLL",
