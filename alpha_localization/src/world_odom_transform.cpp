@@ -151,54 +151,58 @@ void WorldOdomTransform::f_cb_gps_fix(const sensor_msgs::NavSatFix& msg)
     //only do the following if the tf between world and odom are set.
     if(m_tf_set && m_datum_set)
     {
-        
-        ll_point.latitude = msg.latitude;
-        ll_point.longitude = msg.longitude;
-        ll_point.altitude = msg.altitude;
+        if(m_gps.position_covariance[0]<m_acceptable_var 
+                && m_gps.position_covariance[4]<m_acceptable_var
+                && m_gps.status.status>-1)
+        {
+            ll_point.latitude = msg.latitude;
+            ll_point.longitude = msg.longitude;
+            ll_point.altitude = msg.altitude;
 
-        //Get x and y from lattiude and longitude. x->east, y->north
-        f_ll2dis(ll_point, map_point);
-        //convert distance from gps into odom frame using mag_declination.
-        try {        
-            auto tf_w2o = m_transform_buffer.lookupTransform(
-                m_odom_frame,
-                m_world_frame,
-                ros::Time(0)
-            );
+            //Get x and y from lattiude and longitude. x->east, y->north
+            f_ll2dis(ll_point, map_point);
+            //convert distance from gps into odom frame using mag_declination.
+            try {        
+                auto tf_w2o = m_transform_buffer.lookupTransform(
+                    m_odom_frame,
+                    m_world_frame,
+                    ros::Time(0)
+                );
 
-            geometry_msgs::PoseStamped odom_pose, world_pose;
-            world_pose.header = msg.header;
-            world_pose.header.frame_id = m_world_frame;
-            world_pose.pose.position.x = map_point.x;
-            world_pose.pose.position.y = map_point.y;
-            world_pose.pose.position.z = map_point.z;
-            world_pose.pose.orientation.x = 0;
-            world_pose.pose.orientation.y = 0;
-            world_pose.pose.orientation.z = 0;
-            world_pose.pose.orientation.w = 1.0;
-            // Transform the pose from odom frame to world frame
-            tf2::doTransform(world_pose, odom_pose, tf_w2o);
+                geometry_msgs::PoseStamped odom_pose, world_pose;
+                world_pose.header = msg.header;
+                world_pose.header.frame_id = m_world_frame;
+                world_pose.pose.position.x = map_point.x;
+                world_pose.pose.position.y = map_point.y;
+                world_pose.pose.position.z = map_point.z;
+                world_pose.pose.orientation.x = 0;
+                world_pose.pose.orientation.y = 0;
+                world_pose.pose.orientation.z = 0;
+                world_pose.pose.orientation.w = 1.0;
+                // Transform the pose from odom frame to world frame
+                tf2::doTransform(world_pose, odom_pose, tf_w2o);
 
-            auto tf_eigen = tf2::transformToEigen(tf_w2o);
+                auto tf_eigen = tf2::transformToEigen(tf_w2o);
 
-            gps_odom.pose.pose.position.x = odom_pose.pose.position.x;
-            gps_odom.pose.pose.position.y = odom_pose.pose.position.y;
-            gps_odom.header.frame_id = m_odom_frame;
-            gps_odom.header.stamp = msg.header.stamp;
-            gps_odom.pose.covariance[0] = pow(m_position_accuracy,2);
-            gps_odom.pose.covariance[1] = 0;
-            gps_odom.pose.covariance[2] = 0;
-            gps_odom.pose.covariance[6] =0;
-            gps_odom.pose.covariance[7] =  pow(m_position_accuracy,2);
-            gps_odom.pose.covariance[8] = 0;
-            gps_odom.pose.covariance[12] = 0;
-            gps_odom.pose.covariance[13] = 0;
-            gps_odom.pose.covariance[14] =  pow(m_position_accuracy,2);
+                gps_odom.pose.pose.position.x = odom_pose.pose.position.x;
+                gps_odom.pose.pose.position.y = odom_pose.pose.position.y;
+                gps_odom.header.frame_id = m_odom_frame;
+                gps_odom.header.stamp = msg.header.stamp;
+                gps_odom.pose.covariance[0] = pow(m_position_accuracy,2);
+                gps_odom.pose.covariance[1] = 0;
+                gps_odom.pose.covariance[2] = 0;
+                gps_odom.pose.covariance[6] =0;
+                gps_odom.pose.covariance[7] =  pow(m_position_accuracy,2);
+                gps_odom.pose.covariance[8] = 0;
+                gps_odom.pose.covariance[12] = 0;
+                gps_odom.pose.covariance[13] = 0;
+                gps_odom.pose.covariance[14] =  pow(m_position_accuracy,2);
 
-            m_gps_odom_publisher.publish(gps_odom);   
+                m_gps_odom_publisher.publish(gps_odom);   
 
-        } catch(tf2::TransformException &e) {
-            ROS_WARN_STREAM_THROTTLE(10, std::string("Can't get the tf from world to odom") + e.what());
+            } catch(tf2::TransformException &e) {
+                ROS_WARN_STREAM_THROTTLE(10, std::string("Can't get the tf from world to odom") + e.what());
+            }
         }
     }
     else
@@ -212,7 +216,7 @@ void WorldOdomTransform::f_cb_gps_fix(const sensor_msgs::NavSatFix& msg)
                 f_set_tf();
             }
             else{
-                ROS_INFO("GPS fix covariance is more than %lf\r\n", m_acceptable_var);
+                ROS_INFO("GPS fix covariance is not good");
                 return;
             }
         }
