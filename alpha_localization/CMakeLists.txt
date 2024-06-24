@@ -14,9 +14,15 @@ find_package(catkin REQUIRED COMPONENTS
   geographic_msgs
   nav_msgs
   tf2_eigen
+  tf2
+  tf2_ros
 )
 
 find_package(Eigen3 REQUIRED)
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "/usr/share/cmake/geographiclib/")
+find_package(GeographicLib REQUIRED)
+
 add_definitions(${EIGEN_DEFINITIONS})
 
 catkin_package(
@@ -53,8 +59,7 @@ include_directories(
 add_executable(depth_filter_node src/depth_filter_node.cpp)
 add_executable(pressure_to_depth_node src/pressure_to_depth_node.cpp)
 add_executable(imu_ned_to_enu src/imu_ned_enu.cpp)
-add_executable(geopose_publisher_node src/geopose_publisher_node.cpp)
-add_executable(gps_odom_transform_node src/gps_odom_transform.cpp)
+add_executable(world_odom_transform_node src/world_odom_transform.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -67,8 +72,7 @@ add_executable(gps_odom_transform_node src/gps_odom_transform.cpp)
 add_dependencies(depth_filter_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(pressure_to_depth_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(imu_ned_to_enu ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(geopose_publisher_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(gps_odom_transform_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(world_odom_transform_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(depth_filter_node
@@ -83,10 +87,7 @@ target_link_libraries(imu_ned_to_enu
   ${catkin_LIBRARIES}
 )
 
-target_link_libraries(geopose_publisher_node
-  ${catkin_LIBRARIES}
-)
 
-target_link_libraries(gps_odom_transform_node
+target_link_libraries(world_odom_transform_node
   ${catkin_LIBRARIES}
 )

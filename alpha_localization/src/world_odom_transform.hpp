@@ -25,14 +25,18 @@
 
 #include "ros/ros.h"
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
+#include "geometry_msgs/PoseStamped.h"
+
 #include "mvp_msgs/Float64Stamped.h"
 #include "geographic_msgs/GeoPoint.h"
+#include "geographic_msgs/GeoPoseStamped.h"
 #include "geometry_msgs/Point.h"
 #include "sensor_msgs/NavSatFix.h"
 #include "std_srvs/Trigger.h"
 #include "robot_localization/FromLL.h"
 #include "robot_localization/ToLL.h"
 #include "nav_msgs/Odometry.h"
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <cstdio>
@@ -40,7 +44,8 @@
 #include <tf2_ros/transform_listener.h>
 #include "tf2/LinearMath/Matrix3x3.h"
 #include "tf2_eigen/tf2_eigen.h"
-
+#include <tf2_ros/transform_broadcaster.h>
+// #include <tf2_ros/doTransform.h>
 
 #include "memory"
 #include "vector"
@@ -48,7 +53,7 @@
 #include "functional"
 #include "cmath"
 
-class GpsOdomTransform{
+class WorldOdomTransform{
 
 private:
 
@@ -58,7 +63,10 @@ private:
 
 
     ros::Publisher m_gps_odom_publisher;
+
     ros::Publisher m_datum_publisher;
+
+    ros::Publisher m_geopose_publisher;
 
 
     ros::Subscriber m_gps_fix_subscriber;
@@ -71,15 +79,27 @@ private:
 
     ros::ServiceServer reset_tf_server;
 
+    ros::ServiceServer reset_datum_server;
+
     geographic_msgs::GeoPoint m_datum;
 
-    nav_msgs::Odometry m_odom;
+    nav_msgs::Odometry m_odom, m_odom_gps;
+
+    sensor_msgs::NavSatFix m_gps;
+
+    sensor_msgs::NavSatFix m_gps_for_datum;
 
     std::string m_world_frame;
 
     std::string m_odom_frame;
     
     std::string m_tf_prefix;
+
+    bool m_datum_set = false;
+
+    bool m_tf_set = false;
+
+    bool m_mag_declination_auto;
 
     double m_earthR = 6371000;
 
@@ -97,9 +117,13 @@ private:
 
     double m_position_accuracy;
 
+    bool m_publish_tf;
+
     void f_cb_gps_fix(const sensor_msgs::NavSatFix& msg);
 
-    void f_cb_odom(const nav_msgs::OdometryConstPtr& msg);
+    void f_cb_odom(const nav_msgs::Odometry& msg);
+
+    bool f_cb_reset_datum_srv(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp);
 
     bool f_cb_reset_tf_srv(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp);
 
@@ -110,16 +134,24 @@ private:
     void f_ll2dis(geographic_msgs::GeoPoint ll_point, geometry_msgs::Point& map_point);
 
     void f_dis2ll(geometry_msgs::Point map_point, geographic_msgs::GeoPoint& ll_point);
-    
+
+    bool f_set_tf();
+
+    geometry_msgs::TransformStamped transformStamped;
+    tf2_ros::StaticTransformBroadcaster br;
 
     tf2_ros::Buffer m_transform_buffer;
 
     std::shared_ptr<tf2_ros::TransformListener> m_transform_listener;
 
+    
 public:
 
-    GpsOdomTransform();
-    void f_check_tf();
+    WorldOdomTransform();
+    
+    // void f_check_tf();
+
+
 
 };
 
