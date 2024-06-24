@@ -182,7 +182,7 @@ void WorldOdomTransform::f_cb_gps_fix(const sensor_msgs::NavSatFix& msg)
                 // Transform the pose from odom frame to world frame
                 tf2::doTransform(world_pose, odom_pose, tf_w2o);
 
-                auto tf_eigen = tf2::transformToEigen(tf_w2o);
+                // auto tf_eigen = tf2::transformToEigen(tf_w2o);
 
                 gps_odom.pose.pose.position.x = odom_pose.pose.position.x;
                 gps_odom.pose.pose.position.y = odom_pose.pose.position.y;
@@ -382,13 +382,14 @@ bool WorldOdomTransform::f_cb_reset_datum_srv(std_srvs::Trigger::Request &req, s
     if(m_datum_set){
         resp.success = true;
         resp.message = "Datum reset done";
-        return false;
+        return true;
     }
     else{
         resp.success = false;
         resp.message = "Datum failed due to lack of good gps fix within the defined time";
         return true;
     }
+    return true;
 }
 
 bool WorldOdomTransform::f_cb_reset_tf_srv(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp)
