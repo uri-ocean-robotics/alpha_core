@@ -269,7 +269,7 @@ bool WorldOdomTransform::f_set_tf()
 
     transformStamped.transform.translation.x = dx;
     transformStamped.transform.translation.y = dy;
-    transformStamped.transform.translation.z = m_odom_gps_temp.pose.pose.position.z + 0.0;
+    transformStamped.transform.translation.z = -m_odom_gps_temp.pose.pose.position.z + 0.0;
 
     tf2::Quaternion q;
     q.setRPY(0, 0, m_mag_declination);
