@@ -304,7 +304,7 @@ bool WorldOdomTransform::f_set_tf()
 
     ROS_INFO("TF Between world and odom is set\r\n");
     m_tf_set = true;
-    
+    return true;
 }
 
 
@@ -382,10 +382,12 @@ bool WorldOdomTransform::f_cb_reset_datum_srv(std_srvs::Trigger::Request &req, s
     if(m_datum_set){
         resp.success = true;
         resp.message = "Datum reset done";
+        return false;
     }
     else{
         resp.success = false;
         resp.message = "Datum failed due to lack of good gps fix within the defined time";
+        return true;
     }
 }
 
@@ -394,6 +396,7 @@ bool WorldOdomTransform::f_cb_reset_tf_srv(std_srvs::Trigger::Request &req, std_
     m_tf_set = false;
     resp.success = true;
     resp.message = "tf reset triggered";
+    return true;
 }
 
 bool WorldOdomTransform::f_cb_fromLL_srv(robot_localization::FromLL::Request &req, robot_localization::FromLL::Response &resp)
