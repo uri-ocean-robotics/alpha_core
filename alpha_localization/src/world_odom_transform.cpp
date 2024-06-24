@@ -205,7 +205,9 @@ void WorldOdomTransform::f_cb_gps_fix(const sensor_msgs::NavSatFix& msg)
     {
         if(m_datum_set)
         {
-            if(m_gps.position_covariance[0]<m_acceptable_var && m_gps.position_covariance[4]<m_acceptable_var)
+            if(m_gps.position_covariance[0]<m_acceptable_var 
+                && m_gps.position_covariance[4]<m_acceptable_var
+                && m_gps.status.status>-1)
             {
                 f_set_tf();
             }
@@ -361,7 +363,9 @@ bool WorldOdomTransform::f_cb_reset_datum_srv(std_srvs::Trigger::Request &req, s
     while(ros::Time::now().toSec()-datum_reset_request_time.toSec()<m_gps_wait_time)
     {
         ROS_INFO("Waiting for a good gps fix for datum");
-        if(m_gps_for_datum.position_covariance[0]<m_acceptable_var && m_gps_for_datum.position_covariance[4]<m_acceptable_var)
+        if(m_gps_for_datum.position_covariance[0]<m_acceptable_var 
+            && m_gps_for_datum.position_covariance[4]<m_acceptable_var
+            && m_gps_for_datum.status.status>-1)
         {
             m_datum.latitude = m_gps_for_datum.latitude;
             m_datum.longitude = m_gps_for_datum.longitude;
