@@ -354,6 +354,8 @@ void MonitorAbort::timerCallback(const ros::TimerEvent& event)
 
         srv_change_state.request.state = 
             abort_action_[curr_state_.name].transition;
+        srv_change_state.request.caller = 
+            ros::this_node::getName();
 
         // call the srv to change state
         if (!clinet_change_state_.call(srv_change_state)) {
